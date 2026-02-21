@@ -1,0 +1,322 @@
+import { ItemView, WorkspaceLeaf, TFile, Modal, App, normalizePath } from "obsidian";
+import { VIEW_TYPE_ZEN_TODO } from "../constants";
+import type { TodoList, TaskItem, ZenTodoSettings } from "../types";
+import { parseMarkdown } from "../parser/markdown-parser";
+import { serializeToMarkdown } from "../parser/markdown-serializer";
+import { renderListSelector } from "./list-selector";
+import { renderTaskInput } from "./task-input";
+import { renderTaskSection } from "./task-section";
+import type { TaskActionEvent } from "./task-item-renderer";
+import { createTask, completeTask, uncompleteTask, allSubtasksCompleted } from "../models/task";
+import type ZenTodoPlugin from "../main";
+
+export class ZenTodoView extends ItemView {
+	private plugin: ZenTodoPlugin;
+	private lists: TodoList[] = [];
+	private activeFilePath: string | null = null;
+	private addingSubtaskFor: string | null = null;
+	private isSaving = false;
+	private refreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+	constructor(leaf: WorkspaceLeaf, plugin: ZenTodoPlugin) {
+		super(leaf);
+		this.plugin = plugin;
+	}
+
+	getViewType(): string {
+		return VIEW_TYPE_ZEN_TODO;
+	}
+
+	getDisplayText(): string {
+		return "ZenTodo";
+	}
+
+	getIcon(): string {
+		return "check-square";
+	}
+
+	async onOpen(): Promise<void> {
+		await this.loadLists();
+		this.render();
+	}
+
+	async onClose(): Promise<void> {
+		if (this.refreshTimer) clearTimeout(this.refreshTimer);
+	}
+
+	getState(): Record<string, unknown> {
+		return { activeFilePath: this.activeFilePath };
+	}
+
+	async setState(state: Record<string, unknown>): Promise<void> {
+		if (typeof state.activeFilePath === "string") {
+			this.activeFilePath = state.activeFilePath;
+		}
+		await this.loadLists();
+		this.render();
+	}
+
+	/** Called by main.ts when a todo file changes externally. */
+	onExternalChange(_filePath: string): void {
+		if (this.isSaving) return;
+		if (this.refreshTimer) clearTimeout(this.refreshTimer);
+		this.refreshTimer = setTimeout(async () => {
+			await this.loadLists();
+			this.render();
+		}, 300);
+	}
+
+	/** Public: opens the new-list modal (triggered by command). */
+	async createNewList(): Promise<void> {
+		new NewListModal(this.app, async (name) => {
+			const folder = normalizePath(this.plugin.settings.todoFolder);
+			const folderAbstract = this.app.vault.getAbstractFileByPath(folder);
+			if (!folderAbstract) {
+				await this.app.vault.createFolder(folder);
+			}
+			const filePath = normalizePath(`${folder}/${name}.md`);
+			const content = serializeToMarkdown(name, []);
+			const file = await this.app.vault.create(filePath, content);
+			this.activeFilePath = file.path;
+			await this.loadLists();
+			this.render();
+		}).open();
+	}
+
+	// ------------------------------------------------------------------ //
+	// Private helpers
+	// ------------------------------------------------------------------ //
+
+	private async loadLists(): Promise<void> {
+		const folder = normalizePath(this.plugin.settings.todoFolder);
+		const files = this.app.vault
+			.getFiles()
+			.filter((f) => f.path.startsWith(folder + "/") && f.extension === "md");
+
+		this.lists = await Promise.all(
+			files.map(async (file) => {
+				const content = await this.app.vault.read(file);
+				const { title, tasks } = parseMarkdown(content);
+				return { filePath: file.path, title, tasks };
+			})
+		);
+
+		// Ensure active path still exists; fall back to first list
+		if (this.lists.length > 0) {
+			const stillExists = this.lists.some((l) => l.filePath === this.activeFilePath);
+			if (!stillExists) this.activeFilePath = this.lists[0].filePath;
+		} else {
+			this.activeFilePath = null;
+		}
+	}
+
+	private getActiveList(): TodoList | null {
+		if (!this.activeFilePath) return null;
+		return this.lists.find((l) => l.filePath === this.activeFilePath) ?? null;
+	}
+
+	private render(): void {
+		const { contentEl } = this;
+		contentEl.empty();
+		contentEl.addClass("zen-todo-view");
+
+		// List selector tabs
+		const selectorEl = contentEl.createDiv({ cls: "zen-todo-selector-wrapper" });
+		renderListSelector(
+			selectorEl,
+			this.lists,
+			this.activeFilePath,
+			(fp) => {
+				this.activeFilePath = fp;
+				this.addingSubtaskFor = null;
+				this.render();
+			},
+			() => this.createNewList()
+		);
+
+		const activeList = this.getActiveList();
+		if (!activeList) {
+			const emptyEl = contentEl.createDiv({ cls: "zen-todo-no-list" });
+			emptyEl.createEl("p", { text: "No todo lists found." });
+			emptyEl.createEl("p", {
+				text: `Click + to create a list, or add .md files to ${this.plugin.settings.todoFolder}/`,
+			});
+			return;
+		}
+
+		// Task input
+		const inputEl = contentEl.createDiv({ cls: "zen-todo-input-wrapper" });
+		renderTaskInput(inputEl, (text, dueDate) => this.addTask(activeList, text, dueDate));
+
+		// Task sections
+		const contentDiv = contentEl.createDiv({ cls: "zen-todo-content" });
+		const incomplete = activeList.tasks.filter((t) => !t.completed);
+		const complete = activeList.tasks.filter((t) => t.completed);
+
+		renderTaskSection(
+			contentDiv,
+			incomplete,
+			complete,
+			this.plugin.settings.showCompletedByDefault,
+			(event) => this.handleTaskAction(activeList, event),
+			{
+				addingSubtaskFor: this.addingSubtaskFor,
+				onSubtaskSubmit: (parentTask, text) =>
+					this.addSubtask(activeList, parentTask, text),
+			}
+		);
+	}
+
+	private async handleTaskAction(list: TodoList, event: TaskActionEvent): Promise<void> {
+		switch (event.action) {
+			case "toggle":
+				await this.toggleTask(list, event.task, event.parentTask);
+				break;
+			case "delete":
+				await this.deleteTask(list, event.task, event.parentTask);
+				break;
+			case "edit":
+				if (event.value !== undefined) {
+					await this.editTask(list, event.task, event.value);
+				}
+				break;
+			case "add-subtask":
+				this.addingSubtaskFor = event.task.id;
+				this.render();
+				break;
+			case "set-due":
+				await this.setDueDate(list, event.task, event.value, event.parentTask);
+				break;
+		}
+	}
+
+	private async addTask(list: TodoList, text: string, dueDate?: string): Promise<void> {
+		list.tasks.push(createTask(text, dueDate));
+		await this.saveList(list);
+	}
+
+	private async addSubtask(
+		list: TodoList,
+		parentTask: TaskItem,
+		text: string
+	): Promise<void> {
+		const subtask = createTask(text);
+		subtask.indentLevel = parentTask.indentLevel + 1;
+		parentTask.subtasks.push(subtask);
+		this.addingSubtaskFor = null;
+		await this.saveList(list);
+	}
+
+	private async toggleTask(
+		list: TodoList,
+		task: TaskItem,
+		parentTask?: TaskItem
+	): Promise<void> {
+		const updated = task.completed ? uncompleteTask(task) : completeTask(task);
+		Object.assign(task, updated);
+
+		// Auto-complete/uncomplete parent based on subtask state
+		if (parentTask && this.plugin.settings.autoCompleteParent) {
+			if (!task.completed && parentTask.completed) {
+				Object.assign(parentTask, uncompleteTask(parentTask));
+			} else if (task.completed && allSubtasksCompleted(parentTask) && !parentTask.completed) {
+				Object.assign(parentTask, completeTask(parentTask));
+			}
+		}
+
+		await this.saveList(list);
+	}
+
+	private async deleteTask(
+		list: TodoList,
+		task: TaskItem,
+		parentTask?: TaskItem
+	): Promise<void> {
+		if (parentTask) {
+			parentTask.subtasks = parentTask.subtasks.filter((t) => t.id !== task.id);
+		} else {
+			list.tasks = list.tasks.filter((t) => t.id !== task.id);
+		}
+		await this.saveList(list);
+	}
+
+	private async editTask(list: TodoList, task: TaskItem, newText: string): Promise<void> {
+		task.text = newText;
+		await this.saveList(list);
+	}
+
+	private async setDueDate(
+		list: TodoList,
+		task: TaskItem,
+		dueDate: string | undefined,
+		_parentTask?: TaskItem
+	): Promise<void> {
+		task.dueDate = dueDate;
+		await this.saveList(list);
+	}
+
+	private async saveList(list: TodoList): Promise<void> {
+		const abstract = this.app.vault.getAbstractFileByPath(list.filePath);
+		if (!(abstract instanceof TFile)) return;
+
+		const content = serializeToMarkdown(list.title, list.tasks);
+		this.isSaving = true;
+		try {
+			await this.app.vault.process(abstract, () => content);
+		} finally {
+			this.isSaving = false;
+		}
+		this.render();
+	}
+}
+
+// ------------------------------------------------------------------ //
+// New list modal
+// ------------------------------------------------------------------ //
+
+class NewListModal extends Modal {
+	private onSubmit: (name: string) => void;
+
+	constructor(app: App, onSubmit: (name: string) => void) {
+		super(app);
+		this.onSubmit = onSubmit;
+	}
+
+	onOpen(): void {
+		const { contentEl } = this;
+		contentEl.createEl("h2", { text: "Create new todo list" });
+
+		const input = contentEl.createEl("input", {
+			type: "text",
+			cls: "zen-todo-modal-input",
+			attr: {
+				placeholder: "List name...",
+				"aria-label": "List name",
+			},
+		});
+
+		const submitBtn = contentEl.createEl("button", {
+			cls: "mod-cta",
+			text: "Create",
+		});
+
+		const submit = () => {
+			const name = input.value.trim();
+			if (!name) return;
+			this.close();
+			this.onSubmit(name);
+		};
+
+		input.addEventListener("keydown", (e: KeyboardEvent) => {
+			if (e.key === "Enter" && !e.isComposing) submit();
+		});
+		submitBtn.addEventListener("click", submit);
+
+		// Defer focus so the modal animation finishes first
+		setTimeout(() => input.focus(), 50);
+	}
+
+	onClose(): void {
+		this.contentEl.empty();
+	}
+}

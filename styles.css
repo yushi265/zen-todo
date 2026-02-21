@@ -1,0 +1,453 @@
+/* ==========================================================================
+   ZenTodo — Plugin Styles
+   All selectors scoped to .zen-todo-view (or modal class) to prevent
+   conflicts with other plugins and themes.
+   Uses Obsidian CSS variables exclusively — no hardcoded values.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Utility
+   -------------------------------------------------------------------------- */
+
+.zen-todo-view .is-hidden {
+	display: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   View shell
+   -------------------------------------------------------------------------- */
+
+.zen-todo-view {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	overflow: hidden;
+	color: var(--text-normal);
+	font-family: var(--font-interface);
+}
+
+/* --------------------------------------------------------------------------
+   List selector (tab bar)
+   -------------------------------------------------------------------------- */
+
+.zen-todo-selector-wrapper {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-1);
+	border-bottom: 1px solid var(--background-modifier-border);
+	padding: 0 var(--size-4-2);
+	overflow-x: auto;
+	flex-shrink: 0;
+	min-height: 44px;
+}
+
+.zen-todo-tabs {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	flex: 1;
+	overflow-x: auto;
+}
+
+.zen-todo-tab {
+	padding: 0 var(--size-4-3);
+	border: none;
+	background: transparent;
+	color: var(--text-muted);
+	cursor: pointer;
+	border-bottom: 2px solid transparent;
+	white-space: nowrap;
+	font-size: var(--font-ui-small);
+	font-family: var(--font-interface);
+	min-height: 44px;
+	transition: color 0.1s ease;
+}
+
+.zen-todo-tab:hover {
+	color: var(--text-normal);
+}
+
+.zen-todo-tab.is-active {
+	color: var(--text-accent);
+	border-bottom-color: var(--text-accent);
+	font-weight: var(--font-semibold);
+}
+
+.zen-todo-tab:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: -2px;
+	border-radius: var(--radius-s);
+}
+
+.zen-todo-new-list-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	border: none;
+	background: transparent;
+	color: var(--text-muted);
+	cursor: pointer;
+	border-radius: var(--radius-s);
+	flex-shrink: 0;
+}
+
+.zen-todo-new-list-btn:hover {
+	color: var(--text-normal);
+	background: var(--background-modifier-hover);
+}
+
+.zen-todo-new-list-btn:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Task input
+   -------------------------------------------------------------------------- */
+
+.zen-todo-input-wrapper {
+	padding: var(--size-4-3);
+	border-bottom: 1px solid var(--background-modifier-border);
+	flex-shrink: 0;
+}
+
+.zen-todo-input-row {
+	display: flex;
+	gap: var(--size-4-2);
+	align-items: center;
+}
+
+.zen-todo-text-input {
+	flex: 1;
+	min-height: 44px;
+	padding: var(--size-4-2) var(--size-4-3);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	font-family: var(--font-interface);
+}
+
+.zen-todo-text-input:focus {
+	outline: none;
+	border-color: var(--interactive-accent);
+	box-shadow: 0 0 0 2px var(--background-modifier-active-hover);
+}
+
+.zen-todo-input-date {
+	min-height: 44px;
+	padding: 0 var(--size-4-2);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	font-family: var(--font-interface);
+}
+
+.zen-todo-add-btn {
+	padding: 0 var(--size-4-4);
+	min-height: 44px;
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border: none;
+	border-radius: var(--radius-s);
+	cursor: pointer;
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+	font-family: var(--font-interface);
+	white-space: nowrap;
+}
+
+.zen-todo-add-btn:hover {
+	background: var(--interactive-accent-hover);
+}
+
+.zen-todo-add-btn:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Content scroll area
+   -------------------------------------------------------------------------- */
+
+.zen-todo-content {
+	flex: 1;
+	overflow-y: auto;
+	padding: var(--size-4-3);
+}
+
+/* --------------------------------------------------------------------------
+   Task items
+   -------------------------------------------------------------------------- */
+
+.zen-todo-task-item {
+	display: flex;
+	flex-direction: column;
+	border-radius: var(--radius-s);
+	margin-bottom: 2px;
+	position: relative;
+}
+
+.zen-todo-task-item:hover > .zen-todo-task-row {
+	background: var(--background-modifier-hover);
+}
+
+.zen-todo-task-item:hover .zen-todo-task-actions {
+	opacity: 1;
+}
+
+.zen-todo-task-row {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	padding: var(--size-4-1) var(--size-4-2);
+	border-radius: var(--radius-s);
+	min-height: 32px;
+}
+
+/* Checkbox */
+.zen-todo-checkbox {
+	width: 18px;
+	height: 18px;
+	cursor: pointer;
+	accent-color: var(--interactive-accent);
+	flex-shrink: 0;
+}
+
+/* Task content (text + inline edit) */
+.zen-todo-task-content {
+	flex: 1;
+	min-width: 0;
+}
+
+.zen-todo-task-text {
+	display: block;
+	line-height: 1.5;
+	font-size: var(--font-ui-small);
+	cursor: text;
+	word-break: break-word;
+	color: var(--text-normal);
+}
+
+.zen-todo-task-item.is-completed .zen-todo-task-text {
+	text-decoration: line-through;
+	color: var(--text-muted);
+}
+
+.zen-todo-task-text:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	border-radius: var(--radius-s);
+}
+
+.zen-todo-task-edit-input {
+	width: 100%;
+	padding: 2px var(--size-4-2);
+	border: 1px solid var(--interactive-accent);
+	border-radius: var(--radius-s);
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	font-family: var(--font-interface);
+}
+
+/* Due / done badges */
+.zen-todo-due-badge,
+.zen-todo-done-badge {
+	font-size: var(--font-smallest);
+	padding: 1px var(--size-4-2);
+	border-radius: var(--radius-s);
+	background: var(--background-secondary);
+	color: var(--text-muted);
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.zen-todo-due-badge.is-overdue {
+	background: var(--background-modifier-error);
+	color: var(--text-error);
+}
+
+.zen-todo-due-badge.is-today {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+/* --------------------------------------------------------------------------
+   Task actions (hover)
+   -------------------------------------------------------------------------- */
+
+.zen-todo-task-actions {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	opacity: 0;
+	transition: opacity 0.1s ease;
+	flex-shrink: 0;
+}
+
+.zen-todo-action-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	border: none;
+	background: transparent;
+	color: var(--text-muted);
+	cursor: pointer;
+	border-radius: var(--radius-s);
+	padding: 0;
+}
+
+.zen-todo-action-btn:hover {
+	color: var(--text-normal);
+	background: var(--background-modifier-hover);
+}
+
+.zen-todo-action-btn:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 2px;
+}
+
+.zen-todo-delete-btn:hover {
+	color: var(--text-error);
+	background: var(--background-modifier-error-hover);
+}
+
+/* Inline date picker inside actions */
+.zen-todo-inline-date {
+	width: 130px;
+	min-height: 36px;
+	padding: 0 var(--size-4-2);
+	border: 1px solid var(--interactive-accent);
+	border-radius: var(--radius-s);
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-size: var(--font-smallest);
+	font-family: var(--font-interface);
+}
+
+/* --------------------------------------------------------------------------
+   Subtasks
+   -------------------------------------------------------------------------- */
+
+.zen-todo-subtasks {
+	padding-left: var(--size-4-6);
+	margin-top: 2px;
+}
+
+.zen-todo-subtasks .zen-todo-task-row {
+	min-height: 28px;
+}
+
+/* Subtask inline input */
+.zen-todo-subtask-input-row {
+	display: flex;
+	align-items: center;
+	padding: var(--size-4-1) var(--size-4-2);
+	margin-bottom: 2px;
+}
+
+.zen-todo-subtask-input {
+	flex: 1;
+	min-height: 36px;
+	padding: var(--size-4-1) var(--size-4-2);
+	border: 1px solid var(--interactive-accent);
+	border-radius: var(--radius-s);
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	font-family: var(--font-interface);
+}
+
+/* --------------------------------------------------------------------------
+   Completed section (collapsible <details>)
+   -------------------------------------------------------------------------- */
+
+.zen-todo-completed-section {
+	margin-top: var(--size-4-4);
+}
+
+.zen-todo-completed-summary {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+	font-family: var(--font-interface);
+	cursor: pointer;
+	padding: 0 var(--size-4-2);
+	user-select: none;
+	list-style: none;
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	min-height: 44px;
+	border-radius: var(--radius-s);
+}
+
+.zen-todo-completed-summary::-webkit-details-marker {
+	display: none;
+}
+
+.zen-todo-completed-summary::before {
+	content: "▶";
+	font-size: 10px;
+	display: inline-block;
+	transition: transform 0.15s ease;
+	flex-shrink: 0;
+}
+
+details[open] > .zen-todo-completed-summary::before {
+	transform: rotate(90deg);
+}
+
+.zen-todo-completed-summary:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.zen-todo-completed-summary:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   Empty states
+   -------------------------------------------------------------------------- */
+
+.zen-todo-empty,
+.zen-todo-no-list {
+	text-align: center;
+	color: var(--text-muted);
+	padding: var(--size-4-8) var(--size-4-4);
+	font-size: var(--font-ui-small);
+	line-height: 1.8;
+}
+
+/* --------------------------------------------------------------------------
+   Modal — new list name input
+   -------------------------------------------------------------------------- */
+
+.zen-todo-modal-input {
+	display: block;
+	width: 100%;
+	min-height: 44px;
+	padding: var(--size-4-2) var(--size-4-3);
+	margin-bottom: var(--size-4-3);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-size: var(--font-ui-medium);
+	font-family: var(--font-interface);
+	box-sizing: border-box;
+}
+
+.zen-todo-modal-input:focus {
+	outline: none;
+	border-color: var(--interactive-accent);
+}

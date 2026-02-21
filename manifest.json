@@ -1,0 +1,10 @@
+{
+  "id": "zen-todo",
+  "name": "ZenTodo",
+  "version": "1.0.0",
+  "minAppVersion": "1.4.0",
+  "description": "A minimalist todo manager with Tasks-plugin-compatible Markdown storage.",
+  "author": "shiina",
+  "authorUrl": "",
+  "isDesktopOnly": false
+}

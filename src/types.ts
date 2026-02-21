@@ -1,0 +1,21 @@
+export interface TaskItem {
+	id: string;
+	text: string;
+	completed: boolean;
+	dueDate?: string; // YYYY-MM-DD
+	doneDate?: string; // YYYY-MM-DD
+	subtasks: TaskItem[];
+	indentLevel: number;
+}
+
+export interface TodoList {
+	filePath: string;
+	title: string;
+	tasks: TaskItem[];
+}
+
+export interface ZenTodoSettings {
+	todoFolder: string;
+	showCompletedByDefault: boolean;
+	autoCompleteParent: boolean;
+}
