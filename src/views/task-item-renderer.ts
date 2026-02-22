@@ -14,6 +14,7 @@ export interface TaskActionEvent {
 export interface RenderTaskOptions {
 	addingSubtaskFor?: string | null;
 	onSubtaskSubmit?: (parentTask: TaskItem, text: string) => void;
+	onSubtaskCancel?: () => void;
 }
 
 export function renderTaskItem(
@@ -166,8 +167,8 @@ export function renderTaskItem(
 		(dateInput as HTMLInputElement & { showPicker?: () => void }).showPicker?.();
 	});
 
-	// Add subtask button (root tasks only)
-	if (!parentTask) {
+	// Add subtask button (root tasks only, not completed)
+	if (!parentTask && !task.completed) {
 		const addSubBtn = actionsEl.createEl("button", {
 			cls: "zen-todo-action-btn",
 			attr: {
@@ -258,7 +259,7 @@ export function renderTaskItem(
 			renderTaskItem(subtasksEl, subtask, onAction, task);
 		}
 		if (options.addingSubtaskFor === task.id && options.onSubtaskSubmit) {
-			renderSubtaskInput(subtasksEl, task, options.onSubtaskSubmit);
+			renderSubtaskInput(subtasksEl, task, options.onSubtaskSubmit, options.onSubtaskCancel ?? (() => {}));
 		}
 	}
 }
@@ -294,7 +295,8 @@ function addLongPressHandler(
 function renderSubtaskInput(
 	container: HTMLElement,
 	parentTask: TaskItem,
-	onSubmit: (parentTask: TaskItem, text: string) => void
+	onSubmit: (parentTask: TaskItem, text: string) => void,
+	onCancel: () => void
 ): void {
 	const row = container.createDiv({ cls: "zen-todo-subtask-input-row" });
 	const input = row.createEl("input", {
@@ -317,8 +319,13 @@ function renderSubtaskInput(
 			e.preventDefault();
 			submit();
 		} else if (e.key === "Escape") {
-			row.remove();
+			onCancel();
 		}
+	});
+
+	input.addEventListener("blur", () => {
+		// 少し遅延して、Enter の submit と競合しないようにする
+		setTimeout(() => onCancel(), 150);
 	});
 
 	// Defer focus so the render cycle completes first

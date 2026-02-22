@@ -163,6 +163,10 @@ export class ZenTodoView extends ItemView {
 				addingSubtaskFor: this.addingSubtaskFor,
 				onSubtaskSubmit: (parentTask, text) =>
 					this.addSubtask(activeList, parentTask, text),
+				onSubtaskCancel: () => {
+					this.addingSubtaskFor = null;
+					this.render();
+				},
 			}
 		);
 	}
