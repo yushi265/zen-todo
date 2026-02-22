@@ -1,4 +1,4 @@
-import { setIcon } from "obsidian";
+import { setIcon, Menu, Platform } from "obsidian";
 import type { TaskItem } from "../types";
 import { isOverdue, isToday } from "../utils/date-utils";
 
@@ -94,7 +94,9 @@ export function renderTaskItem(
 		editSaved = false;
 	};
 
-	textSpan.addEventListener("click", startEditing);
+	if (!Platform.isMobile) {
+		textSpan.addEventListener("click", startEditing);
+	}
 	textSpan.addEventListener("keydown", (e: KeyboardEvent) => {
 		if (e.key === "Enter" || e.key === " ") {
 			e.preventDefault();
@@ -194,6 +196,61 @@ export function renderTaskItem(
 		onAction({ action: "delete", task, parentTask });
 	});
 
+	// ── Mobile: long-press context menu ──
+	if (Platform.isMobile) {
+		addLongPressHandler(rowEl, (e) => {
+			const menu = new Menu();
+
+			menu.addItem((item) => {
+				item.setTitle("Edit")
+					.setIcon("pencil")
+					.onClick(() => {
+						startEditing();
+					});
+			});
+
+			if (!parentTask) {
+				menu.addItem((item) => {
+					item.setTitle("Add subtask")
+						.setIcon("plus")
+						.onClick(() => {
+							onAction({ action: "add-subtask", task, parentTask });
+						});
+				});
+			}
+
+			menu.addItem((item) => {
+				item.setTitle("Set due date")
+					.setIcon("calendar")
+					.onClick(() => {
+						const tmpDate = createEl("input", { type: "date" });
+						if (task.dueDate) tmpDate.value = task.dueDate;
+						tmpDate.setCssStyles({ position: "absolute", opacity: "0", pointerEvents: "none" });
+						rowEl.appendChild(tmpDate);
+						tmpDate.addEventListener("change", () => {
+							onAction({ action: "set-due", task, value: tmpDate.value || undefined, parentTask });
+							tmpDate.remove();
+						});
+						tmpDate.addEventListener("blur", () => {
+							setTimeout(() => tmpDate.remove(), 200);
+						});
+						try { (tmpDate as HTMLInputElement & { showPicker?: () => void }).showPicker?.(); } catch { tmpDate.click(); }
+					});
+			});
+
+			menu.addItem((item) => {
+				item.setTitle("Delete")
+					.setIcon("trash-2")
+					.onClick(() => {
+						onAction({ action: "delete", task, parentTask });
+					});
+			});
+
+			const touch = e.touches[0];
+			menu.showAtPosition({ x: touch.clientX, y: touch.clientY });
+		});
+	}
+
 	// Subtasks container
 	if (task.subtasks.length > 0 || options.addingSubtaskFor === task.id) {
 		const subtasksEl = itemEl.createDiv({ cls: "zen-todo-subtasks" });
@@ -204,6 +261,34 @@ export function renderTaskItem(
 			renderSubtaskInput(subtasksEl, task, options.onSubtaskSubmit);
 		}
 	}
+}
+
+function addLongPressHandler(
+	el: HTMLElement,
+	callback: (e: TouchEvent) => void,
+	duration = 500
+): void {
+	let timer: number | null = null;
+
+	el.addEventListener("touchstart", (e: TouchEvent) => {
+		timer = window.setTimeout(() => {
+			// Prevent the subsequent tap/click from firing
+			el.addEventListener("click", (ev) => {
+				ev.stopPropagation();
+				ev.preventDefault();
+			}, { once: true, capture: true });
+			callback(e);
+			timer = null;
+		}, duration);
+	}, { passive: true });
+
+	el.addEventListener("touchend", () => {
+		if (timer) { clearTimeout(timer); timer = null; }
+	});
+
+	el.addEventListener("touchmove", () => {
+		if (timer) { clearTimeout(timer); timer = null; }
+	}, { passive: true });
 }
 
 function renderSubtaskInput(

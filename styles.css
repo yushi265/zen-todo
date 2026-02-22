@@ -290,6 +290,11 @@
 	flex-shrink: 0;
 }
 
+/* Mobile: hide action buttons, use long-press menu instead */
+body.is-mobile .zen-todo-task-actions {
+	display: none;
+}
+
 .zen-todo-action-btn {
 	display: flex;
 	align-items: center;
