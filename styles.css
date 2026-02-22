@@ -338,6 +338,69 @@ body.is-mobile .zen-todo-task-actions {
 }
 
 /* --------------------------------------------------------------------------
+   Task notes
+   -------------------------------------------------------------------------- */
+
+.zen-todo-task-notes {
+	padding: 0 var(--size-4-2) var(--size-4-2) calc(38px + var(--size-4-2) * 3);
+	font-size: var(--font-smallest);
+	color: var(--text-muted);
+	white-space: pre-wrap;
+	word-break: break-word;
+	line-height: 1.5;
+}
+
+.zen-todo-notes-textarea {
+	display: block;
+	box-sizing: border-box;
+	width: calc(100% - 38px - var(--size-4-2) * 4);
+	margin: var(--size-4-1) var(--size-4-2) var(--size-4-2) calc(38px + var(--size-4-2) * 3);
+	padding: var(--size-4-2);
+	border: 1px solid var(--interactive-accent);
+	border-radius: var(--radius-s);
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+	font-family: var(--font-interface);
+	resize: vertical;
+	min-height: 80px;
+}
+
+.zen-todo-notes-actions {
+	display: flex;
+	justify-content: flex-end;
+	padding: 0 var(--size-4-2) var(--size-4-2) calc(38px + var(--size-4-2) * 3);
+}
+
+.zen-todo-notes-save-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-4-1);
+	padding: var(--size-4-1) var(--size-4-3);
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border: none;
+	border-radius: var(--radius-s);
+	cursor: pointer;
+	font-size: var(--font-ui-small);
+	font-family: var(--font-interface);
+}
+
+.zen-todo-notes-save-btn:hover {
+	background: var(--interactive-accent-hover);
+}
+
+.zen-todo-notes-save-btn:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 2px;
+}
+
+.zen-todo-action-btn.has-notes {
+	color: var(--text-accent);
+	opacity: 1 !important;
+}
+
+/* --------------------------------------------------------------------------
    Subtasks
    -------------------------------------------------------------------------- */
 
