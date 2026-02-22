@@ -17,6 +17,7 @@ export class ZenTodoView extends ItemView {
 	private addingSubtaskFor: string | null = null;
 	private isSaving = false;
 	private refreshTimer: ReturnType<typeof setTimeout> | null = null;
+	private shouldFocusTaskInput = false;
 
 	constructor(leaf: WorkspaceLeaf, plugin: ZenTodoPlugin) {
 		super(leaf);
@@ -147,6 +148,11 @@ export class ZenTodoView extends ItemView {
 		// Task input
 		const inputEl = contentEl.createDiv({ cls: "zen-todo-input-wrapper" });
 		renderTaskInput(inputEl, (text, dueDate) => this.addTask(activeList, text, dueDate));
+		if (this.shouldFocusTaskInput) {
+			this.shouldFocusTaskInput = false;
+			const input = inputEl.querySelector(".zen-todo-text-input") as HTMLInputElement;
+			if (input) setTimeout(() => input.focus(), 0);
+		}
 
 		// Task sections
 		const contentDiv = contentEl.createDiv({ cls: "zen-todo-content" });
@@ -196,6 +202,7 @@ export class ZenTodoView extends ItemView {
 
 	private async addTask(list: TodoList, text: string, dueDate?: string): Promise<void> {
 		list.tasks.push(createTask(text, dueDate));
+		this.shouldFocusTaskInput = true;
 		await this.saveList(list);
 	}
 
@@ -207,7 +214,7 @@ export class ZenTodoView extends ItemView {
 		const subtask = createTask(text);
 		subtask.indentLevel = parentTask.indentLevel + 1;
 		parentTask.subtasks.push(subtask);
-		this.addingSubtaskFor = null;
+		// this.addingSubtaskFor = null; を削除してフォームを維持する
 		await this.saveList(list);
 	}
 

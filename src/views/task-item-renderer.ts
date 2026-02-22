@@ -325,7 +325,10 @@ function renderSubtaskInput(
 
 	input.addEventListener("blur", () => {
 		// 少し遅延して、Enter の submit と競合しないようにする
-		setTimeout(() => onCancel(), 150);
+		// DOM再構築で要素が消えた場合はキャンセルしない（isConnected チェック）
+		setTimeout(() => {
+			if (input.isConnected) onCancel();
+		}, 150);
 	});
 
 	// Defer focus so the render cycle completes first
