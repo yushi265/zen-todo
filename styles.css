@@ -286,6 +286,21 @@
 	flex-shrink: 0;
 }
 
+/* Mobile subline (created date + due date) */
+.zen-todo-task-subline {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	margin-top: 2px;
+	flex-wrap: wrap;
+}
+
+.zen-todo-created-subline {
+	font-size: var(--font-smallest);
+	color: var(--text-muted);
+	line-height: 1;
+}
+
 /* --------------------------------------------------------------------------
    Task actions (hover)
    -------------------------------------------------------------------------- */

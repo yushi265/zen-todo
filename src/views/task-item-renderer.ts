@@ -130,6 +130,32 @@ export function renderTaskItem(
   });
   editInput.addEventListener("blur", saveEdit);
 
+  // Mobile subline: created date + due date
+  if (
+    Platform.isMobile &&
+    (task.createdDate || (task.dueDate && !task.completed))
+  ) {
+    const subline = contentArea.createDiv({ cls: "zen-todo-task-subline" });
+    if (task.createdDate) {
+      subline.createSpan({
+        cls: "zen-todo-created-subline",
+        text: `${CREATED_DATE_EMOJI} ${formatRelativeDate(task.createdDate)}`,
+      });
+    }
+    if (task.dueDate && !task.completed) {
+      const dueBadge = subline.createSpan({ cls: "zen-todo-due-badge" });
+      if (isOverdue(task.dueDate)) {
+        dueBadge.addClass("is-overdue");
+        dueBadge.textContent = `⚠️ ${task.dueDate}`;
+      } else if (isToday(task.dueDate)) {
+        dueBadge.addClass("is-today");
+        dueBadge.textContent = `🔔 ${task.dueDate}`;
+      } else {
+        dueBadge.textContent = `📅 ${task.dueDate}`;
+      }
+    }
+  }
+
   // Created date badge (desktop only)
   if (task.createdDate && !Platform.isMobile) {
     rowEl.createSpan({
@@ -138,19 +164,24 @@ export function renderTaskItem(
     });
   }
 
-  // Due date badge
+  // Due date badge (desktop: inline in row; mobile: shown in subline above)
   if (task.dueDate && !task.completed) {
-    const badge = rowEl.createSpan({ cls: "zen-todo-due-badge" });
     if (isOverdue(task.dueDate)) {
-      badge.addClass("is-overdue");
       rowEl.addClass("is-overdue");
-      badge.textContent = `⚠️ ${task.dueDate}`;
     } else if (isToday(task.dueDate)) {
-      badge.addClass("is-today");
       rowEl.addClass("is-due-today");
-      badge.textContent = `🔔 ${task.dueDate}`;
-    } else {
-      badge.textContent = `📅 ${task.dueDate}`;
+    }
+    if (!Platform.isMobile) {
+      const badge = rowEl.createSpan({ cls: "zen-todo-due-badge" });
+      if (isOverdue(task.dueDate)) {
+        badge.addClass("is-overdue");
+        badge.textContent = `⚠️ ${task.dueDate}`;
+      } else if (isToday(task.dueDate)) {
+        badge.addClass("is-today");
+        badge.textContent = `🔔 ${task.dueDate}`;
+      } else {
+        badge.textContent = `📅 ${task.dueDate}`;
+      }
     }
   }
 
