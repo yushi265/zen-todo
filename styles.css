@@ -754,3 +754,28 @@ body.is-mobile .zen-todo-drag-handle {
 	max-height: 450px;
 	overflow-y: auto;
 }
+
+/* --------------------------------------------------------------------------
+   Wiki links (internal links rendered inside task text)
+   -------------------------------------------------------------------------- */
+
+.zen-todo-task-text .internal-link {
+	color: var(--link-color);
+	text-decoration-line: var(--link-decoration);
+	cursor: var(--cursor-link);
+}
+
+.zen-todo-task-text .internal-link:hover {
+	color: var(--link-color-hover);
+	text-decoration-line: var(--link-decoration-hover);
+}
+
+.zen-todo-task-text .internal-link.is-unresolved {
+	color: var(--link-unresolved-color);
+	opacity: var(--link-unresolved-opacity);
+}
+
+.zen-todo-task-item.is-completed .zen-todo-task-text .internal-link {
+	color: var(--text-muted);
+	text-decoration-line: line-through;
+}

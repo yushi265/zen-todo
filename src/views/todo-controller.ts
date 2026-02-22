@@ -266,6 +266,8 @@ export class ZenTodoController {
         onDragStateChange: (dragging) => {
           this.isDragging = dragging;
         },
+        app: this.app,
+        sourcePath: activeList.filePath,
       },
     );
   }
@@ -300,7 +302,25 @@ export class ZenTodoController {
         this.editingNotesFor = event.task.id;
         this.render();
         break;
+      case "insert-link":
+        this.insertLink(list, event.task);
+        break;
     }
+  }
+
+  private async insertLink(list: TodoList, task: TaskItem): Promise<void> {
+    if (task.text.includes("[[")) return;
+    const folder = this.app.fileManager.getNewFileParent(list.filePath);
+    const folderPath = folder.path === "/" ? "" : folder.path;
+    const filePath = normalizePath(
+      folderPath ? `${folderPath}/${task.text}.md` : `${task.text}.md`,
+    );
+    const existing = this.app.vault.getAbstractFileByPath(filePath);
+    if (!(existing instanceof TFile)) {
+      await this.app.vault.create(filePath, "");
+    }
+    task.text = `[[${task.text}]]`;
+    await this.saveList(list);
   }
 
   private async addTask(
@@ -390,6 +410,26 @@ export class ZenTodoController {
     task: TaskItem,
     newText: string,
   ): Promise<void> {
+    const oldLink = task.text.match(/^\[\[([^\]]+)\]\]$/);
+    const newLink = newText.match(/^\[\[([^\]]+)\]\]$/);
+
+    // リンク先が変わった場合、既存ファイルをリネーム
+    if (oldLink && newLink && oldLink[1] !== newLink[1]) {
+      const oldFile = this.app.metadataCache.getFirstLinkpathDest(
+        oldLink[1],
+        list.filePath,
+      );
+      if (oldFile instanceof TFile) {
+        const newPath = normalizePath(
+          `${oldFile.parent?.path ?? ""}/${newLink[1]}.md`,
+        );
+        const conflict = this.app.vault.getAbstractFileByPath(newPath);
+        if (!conflict) {
+          await this.app.vault.rename(oldFile, newPath);
+        }
+      }
+    }
+
     task.text = newText;
     await this.saveList(list);
   }

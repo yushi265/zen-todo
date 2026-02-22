@@ -1,4 +1,4 @@
-import { setIcon, Menu, Platform } from "obsidian";
+import { setIcon, Menu, Platform, App } from "obsidian";
 import type { TaskItem } from "../types";
 import { isOverdue, isToday, formatRelativeDate } from "../utils/date-utils";
 import { CREATED_DATE_EMOJI } from "../constants";
@@ -11,7 +11,8 @@ export type TaskActionType =
   | "add-subtask"
   | "set-due"
   | "archive"
-  | "edit-notes";
+  | "edit-notes"
+  | "insert-link";
 
 export interface TaskActionEvent {
   action: TaskActionType;
@@ -29,6 +30,8 @@ export interface RenderTaskOptions {
   onNotesCancel?: () => void;
   onReorder?: (orderedIds: string[], parentTask?: TaskItem) => void;
   onDragStateChange?: (dragging: boolean) => void;
+  app?: App;
+  sourcePath?: string;
 }
 
 export function renderTaskItem(
@@ -64,13 +67,22 @@ export function renderTaskItem(
 
   const textSpan = contentArea.createSpan({
     cls: "zen-todo-task-text",
-    text: task.text,
     attr: {
       tabindex: "0",
       role: "button",
       "aria-label": "Edit task",
     },
   });
+  if (task.text.includes("[[") && options.app) {
+    renderWikiLinkedText(
+      textSpan,
+      task.text,
+      options.app,
+      options.sourcePath ?? "",
+    );
+  } else {
+    textSpan.textContent = task.text;
+  }
 
   // Edit input — hidden by default, toggled on click
   const editInput = contentArea.createEl("input", {
@@ -78,7 +90,10 @@ export function renderTaskItem(
     cls: "zen-todo-task-edit-input is-hidden",
     attr: { "aria-label": "Edit task text" },
   });
-  editInput.value = task.text;
+  // リンク済みタスクは中身だけ表示する（[[...]] を剥がす）
+  const linkedMatch = task.text.match(/^\[\[([^\]]+)\]\]$/);
+  const wasLinked = !!linkedMatch;
+  editInput.value = wasLinked ? linkedMatch![1] : task.text;
 
   const startEditing = () => {
     textSpan.addClass("is-hidden");
@@ -92,8 +107,14 @@ export function renderTaskItem(
   const saveEdit = () => {
     if (editSaved) return;
     editSaved = true;
-    const newText = editInput.value.trim();
-    if (newText && newText !== task.text) {
+    let newText = editInput.value.trim();
+    if (!newText) {
+      cancelEdit();
+      return;
+    }
+    // リンク済みタスクは自動で [[...]] を再付与
+    if (wasLinked) newText = `[[${newText}]]`;
+    if (newText !== task.text) {
       onAction({ action: "edit", task, value: newText, parentTask });
     } else {
       // Restore text span
@@ -104,7 +125,7 @@ export function renderTaskItem(
   };
 
   const cancelEdit = () => {
-    editInput.value = task.text;
+    editInput.value = wasLinked ? linkedMatch![1] : task.text;
     editInput.addClass("is-hidden");
     textSpan.removeClass("is-hidden");
     editSaved = false;
@@ -250,6 +271,20 @@ export function renderTaskItem(
     onAction({ action: "edit-notes", task, parentTask });
   });
 
+  // Link button
+  const linkBtn = actionsEl.createEl("button", {
+    cls: "zen-todo-action-btn",
+    attr: {
+      "aria-label": "Insert link",
+      "data-tooltip-position": "top",
+    },
+  });
+  setIcon(linkBtn, "link");
+  linkBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    onAction({ action: "insert-link", task, parentTask });
+  });
+
   // Add subtask button (root tasks only, not completed)
   if (!parentTask && !task.completed) {
     const addSubBtn = actionsEl.createEl("button", {
@@ -339,6 +374,15 @@ export function renderTaskItem(
           .setIcon("message-square")
           .onClick(() => {
             onAction({ action: "edit-notes", task, parentTask });
+          });
+      });
+
+      menu.addItem((item) => {
+        item
+          .setTitle("Insert link")
+          .setIcon("link")
+          .onClick(() => {
+            onAction({ action: "insert-link", task, parentTask });
           });
       });
 
@@ -484,6 +528,58 @@ export function renderTaskItem(
         options.onSubtaskCancel ?? (() => {}),
       );
     }
+  }
+}
+
+function renderWikiLinkedText(
+  container: HTMLElement,
+  text: string,
+  app: App,
+  sourcePath: string,
+): void {
+  const wikiLinkRegex = /\[\[([^\]]+?)\]\]/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = wikiLinkRegex.exec(text)) !== null) {
+    // Plain text before this link
+    if (match.index > lastIndex) {
+      container.appendText(text.slice(lastIndex, match.index));
+    }
+
+    const inner = match[1];
+    // Support [[target#heading|display]] or [[target|display]] or [[target#heading]] or [[target]]
+    const pipeIdx = inner.indexOf("|");
+    const linkTarget = pipeIdx !== -1 ? inner.slice(0, pipeIdx) : inner;
+    const displayText = pipeIdx !== -1 ? inner.slice(pipeIdx + 1) : inner;
+
+    const linkEl = container.createEl("a", {
+      cls: "internal-link",
+      text: displayText,
+      attr: { href: linkTarget },
+    });
+
+    // Check if the target file exists
+    const targetFile = app.metadataCache.getFirstLinkpathDest(
+      linkTarget.split("#")[0],
+      sourcePath,
+    );
+    if (!targetFile) {
+      linkEl.addClass("is-unresolved");
+    }
+
+    linkEl.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      app.workspace.openLinkText(linkTarget, sourcePath);
+    });
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Remaining plain text
+  if (lastIndex < text.length) {
+    container.appendText(text.slice(lastIndex));
   }
 }
 
