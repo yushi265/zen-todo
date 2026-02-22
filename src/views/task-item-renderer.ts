@@ -125,9 +125,17 @@ export function renderTaskItem(
 	// Due date badge
 	if (task.dueDate && !task.completed) {
 		const badge = rowEl.createSpan({ cls: "zen-todo-due-badge" });
-		badge.textContent = `📅 ${task.dueDate}`;
-		if (isOverdue(task.dueDate)) badge.addClass("is-overdue");
-		else if (isToday(task.dueDate)) badge.addClass("is-today");
+		if (isOverdue(task.dueDate)) {
+			badge.addClass("is-overdue");
+			rowEl.addClass("is-overdue");
+			badge.textContent = `⚠️ ${task.dueDate}`;
+		} else if (isToday(task.dueDate)) {
+			badge.addClass("is-today");
+			rowEl.addClass("is-due-today");
+			badge.textContent = `🔔 ${task.dueDate}`;
+		} else {
+			badge.textContent = `📅 ${task.dueDate}`;
+		}
 	}
 
 	// Done date badge
