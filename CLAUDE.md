@@ -27,27 +27,41 @@ src/
 ├── utils/
 │   └── date-utils.ts          # formatDate, today, isOverdue, isToday
 └── views/
-    ├── todo-view.ts           # ZenTodoView (ItemView): state + action dispatch
+    ├── todo-view.ts           # ZenTodoView (ItemView): thin wrapper that hosts a ZenTodoController
+    ├── todo-controller.ts     # ZenTodoController: state + action dispatch (shared by view and code block)
+    ├── codeblock-processor.ts # ZenTodoCodeBlockChild (MarkdownRenderChild): inline embedded view
     ├── list-selector.ts       # renderListSelector(): tab bar
     ├── task-input.ts          # renderTaskInput(): new task row
     ├── task-section.ts        # renderTaskSection(): incomplete / completed groups
     ├── task-item-renderer.ts  # renderTaskItem(): single row + inline edit
-    └── drag-handler.ts        # attachDragHandle(): pointer-based drag & drop reorder
+    ├── drag-handler.ts        # attachDragHandle(): pointer-based task drag & drop reorder
+    └── tab-drag-handler.ts    # attachTabDrag(): pointer-based list-tab drag & drop reorder
 ```
 
 ### Data Flow
 
 ```
 Vault (.md file)
-  → parseTodoMarkdown()   → TodoList (in-memory)
-  → ZenTodoView (render)  → DOM
-  ← TaskActionEvent       ← user interaction
+  → parseTodoMarkdown()      → TodoList (in-memory)
+  → ZenTodoController.render() → DOM
+  ← TaskActionEvent            ← user interaction
   → task model mutations
-  → serializeTodoList()   → Markdown string
-  → vault.modify()        → Vault (.md file)
+  → serializeTodoList()      → Markdown string
+  → vault.process()          → Vault (.md file)
 ```
 
-### State (ZenTodoView)
+### Controller / View separation
+
+`ZenTodoController` (`todo-controller.ts`) holds all state and business logic. It is instantiated in two contexts:
+
+| Context | Host |
+|---------|------|
+| Sidebar panel | `ZenTodoView` (ItemView) |
+| Inline code block | `ZenTodoCodeBlockChild` (MarkdownRenderChild) |
+
+Both contexts call `controller.initialize()` and `controller.onExternalChange()`. The plugin (`main.ts`) notifies every active view **and** every embedded controller when a todo file changes.
+
+### State (ZenTodoController)
 
 | Field | Type | Purpose |
 |-------|------|---------|
@@ -58,6 +72,7 @@ Vault (.md file)
 | `isSaving` | `boolean` | Lock to prevent concurrent writes |
 | `isDragging` | `boolean` | True while a drag is in progress (suppresses external-change refresh) |
 | `refreshTimer` | `NodeJS.Timeout \| null` | Debounce handle for external changes |
+| `shouldFocusTaskInput` | `boolean` | One-shot flag to focus the task input after add |
 
 ### Drag & Drop Reorder (`drag-handler.ts`)
 
@@ -68,6 +83,27 @@ Vault (.md file)
 - **Auto-scroll**: scrolls the `.zen-todo-content` container when the cursor nears the top/bottom edge
 - **Cancel**: `Escape` key cancels drag without reordering
 - `onReorder(orderedIds)` callback is called only when the result differs from the original order (skipped for single-item groups)
+
+### Tab Drag & Drop Reorder (`tab-drag-handler.ts`)
+
+`attachTabDrag()` attaches a pointer-event-based drag to each list tab:
+
+- **Visual feedback**: dragged tab fades (`is-dragging`), a clone mirrors it (`zen-todo-tab-drag-clone`), a vertical indicator line shows the insertion point (`zen-todo-tab-drop-indicator`)
+- **Cancel**: `Escape` key cancels drag without reordering
+- `onReorder(orderedFilePaths)` callback saves the new order to `settings.listOrder` via `ZenTodoController.reorderLists()`
+
+### Inline Embedded View (`codeblock-processor.ts`)
+
+Registering a `zen-todo` fenced code block in any note renders a full ZenTodo panel inline:
+
+````markdown
+```zen-todo
+```
+````
+
+- `ZenTodoCodeBlockChild` extends `MarkdownRenderChild` and manages its own `ZenTodoController` instance
+- The plugin registers embedded controllers in `embeddedControllers` set so they receive `onExternalChange` notifications alongside the sidebar view
+- The code block content (source) is currently ignored; all lists in the configured folder are loaded
 
 ## Markdown Format
 
@@ -125,13 +161,13 @@ To test locally, symlink or copy these three files into your vault:
 
 - Always check `isSaving` before writing; set it to `true` and release in `finally`
 - Debounce external change events with a 300 ms timer before re-parsing
-- Use `vault.modify()` for updates; never delete and recreate a file
+- Use `vault.process()` for updates (preferred over `vault.modify()`); never delete and recreate a file
 
 ### View Rendering
 
-- ZenTodoView re-renders the entire view on every state change (simple full re-render strategy)
-- Event listeners are attached after DOM construction inside `onOpen()` scope — no persistent references
-- Inline edit state is managed by `addingSubtaskFor` in the view; only one subtask input is open at a time
+- `ZenTodoController` re-renders the entire container on every state change (simple full re-render strategy)
+- Event listeners are attached after DOM construction — no persistent references stored outside the closure
+- Inline edit state is managed by `addingSubtaskFor` / `editingNotesFor` in the controller; only one input is open at a time
 
 ## Settings
 
@@ -142,12 +178,14 @@ Defined in `types.ts` as `ZenTodoSettings` and defaulted in `constants.ts`:
 | `todoFolder` | `"30_ToDos"` | Normalized to forward slashes |
 | `showCompletedByDefault` | `false` | |
 | `autoCompleteParent` | `true` | |
+| `listOrder` | `[]` | Ordered array of file paths; persisted to plugin data |
 
 ## Obsidian API Notes
 
 - Register all event listeners via `this.registerEvent()` so they are cleaned up on unload
-- Use `this.app.vault.getMarkdownFiles()` to enumerate todo files
+- Use `this.app.vault.getFiles()` to enumerate files (works across all Obsidian versions)
 - `ItemView.onOpen()` / `onClose()` are the correct lifecycle hooks for view setup/teardown
+- `MarkdownRenderChild.onload()` / `onunload()` are the lifecycle hooks for code block processors
 - Never call `leaf.detach()` on leaves you did not create; use `leaf.view` checks before interacting
 
 ## Common Tasks
@@ -163,5 +201,5 @@ Defined in `types.ts` as `ZenTodoSettings` and defaulted in `constants.ts`:
 
 1. Add the action type to `TaskActionType` union in `task-item-renderer.ts`
 2. Add a button/handler in `task-item-renderer.ts`
-3. Handle the `TaskActionEvent` in `ZenTodoView.handleTaskAction()` in `todo-view.ts`
+3. Handle the `TaskActionEvent` in `ZenTodoController.handleTaskAction()` in `todo-controller.ts`
 4. Add a pure function for any data mutation in `models/task.ts`
