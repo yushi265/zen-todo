@@ -55,6 +55,12 @@ export default class ZenTodoPlugin extends Plugin {
 		);
 		this.registerEvent(
 			this.app.vault.on("rename", (file, oldPath) => {
+				// Update stored order when a todo file is renamed
+				const idx = this.settings.listOrder.indexOf(oldPath);
+				if (idx !== -1) {
+					this.settings.listOrder[idx] = file.path;
+					this.saveSettings();
+				}
 				if (this.isTodoFile(file.path) || this.isTodoFile(oldPath)) {
 					this.notifyViews(file.path);
 				}

@@ -1,11 +1,13 @@
 import { setIcon } from "obsidian";
+import { attachTabDrag } from "./tab-drag-handler";
 
 export function renderListSelector(
 	container: HTMLElement,
 	lists: { filePath: string; title: string }[],
 	activeFilePath: string | null,
 	onSelect: (filePath: string) => void,
-	onCreateNew: () => void
+	onCreateNew: () => void,
+	onReorder?: (orderedFilePaths: string[]) => void
 ): void {
 	container.empty();
 
@@ -20,9 +22,14 @@ export function renderListSelector(
 				"aria-label": `Switch to ${list.title}`,
 				role: "tab",
 				"aria-selected": String(isActive),
+				"data-file-path": list.filePath,
 			},
 		});
 		tab.addEventListener("click", () => onSelect(list.filePath));
+
+		if (onReorder) {
+			attachTabDrag(tab, tabsEl, onReorder);
+		}
 	}
 
 	const newBtn = container.createEl("button", {

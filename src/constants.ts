@@ -6,6 +6,7 @@ export const DEFAULT_SETTINGS: ZenTodoSettings = {
 	todoFolder: "30_ToDos",
 	showCompletedByDefault: false,
 	autoCompleteParent: true,
+	listOrder: [],
 };
 
 export const DUE_DATE_EMOJI = "📅";

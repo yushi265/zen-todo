@@ -20,4 +20,5 @@ export interface ZenTodoSettings {
 	todoFolder: string;
 	showCompletedByDefault: boolean;
 	autoCompleteParent: boolean;
+	listOrder: string[];
 }

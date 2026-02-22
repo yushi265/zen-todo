@@ -61,6 +61,7 @@
 	font-family: var(--font-interface);
 	min-height: 44px;
 	transition: color 0.1s ease;
+	touch-action: none;
 }
 
 .zen-todo-tab:hover {
@@ -494,6 +495,59 @@ details[open] > .zen-todo-completed-summary::before {
 	padding: var(--size-4-8) var(--size-4-4);
 	font-size: var(--font-ui-small);
 	line-height: 1.8;
+}
+
+/* --------------------------------------------------------------------------
+   Tab Drag & Drop
+   -------------------------------------------------------------------------- */
+
+.zen-todo-tab.is-dragging {
+	opacity: 0.4;
+}
+
+.zen-todo-tab-drag-clone {
+	position: absolute;
+	top: 0;
+	pointer-events: none;
+	z-index: 1000;
+	display: flex;
+	align-items: center;
+	padding: 0 var(--size-4-3);
+	background: var(--background-primary);
+	border: 1px solid var(--interactive-accent);
+	border-radius: var(--radius-s);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	color: var(--text-accent);
+	font-size: var(--font-ui-small);
+	font-family: var(--font-interface);
+	font-weight: var(--font-semibold);
+	white-space: nowrap;
+	opacity: 0.9;
+}
+
+.zen-todo-tab-drop-indicator {
+	position: absolute;
+	top: 4px;
+	bottom: 4px;
+	width: 3px;
+	background: var(--interactive-accent);
+	border-radius: 2px;
+	pointer-events: none;
+	z-index: 999;
+	box-shadow: 0 0 6px var(--interactive-accent);
+}
+
+.zen-todo-tab-drop-indicator::before {
+	content: "";
+	position: absolute;
+	top: -4px;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--interactive-accent);
+	box-shadow: 0 0 4px var(--interactive-accent);
 }
 
 /* --------------------------------------------------------------------------

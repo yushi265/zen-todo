@@ -104,6 +104,9 @@ export class ZenTodoView extends ItemView {
 			})
 		);
 
+		this.sortListsByOrder();
+		await this.reconcileListOrder();
+
 		// Ensure active path still exists; fall back to first list
 		if (this.lists.length > 0) {
 			const stillExists = this.lists.some((l) => l.filePath === this.activeFilePath);
@@ -111,6 +114,34 @@ export class ZenTodoView extends ItemView {
 		} else {
 			this.activeFilePath = null;
 		}
+	}
+
+	private sortListsByOrder(): void {
+		const order = this.plugin.settings.listOrder;
+		if (order.length === 0) return;
+		this.lists.sort((a, b) => {
+			const ai = order.indexOf(a.filePath);
+			const bi = order.indexOf(b.filePath);
+			const aIdx = ai === -1 ? Infinity : ai;
+			const bIdx = bi === -1 ? Infinity : bi;
+			return aIdx - bIdx;
+		});
+	}
+
+	private async reconcileListOrder(): Promise<void> {
+		const validPaths = new Set(this.lists.map((l) => l.filePath));
+		const cleaned = this.plugin.settings.listOrder.filter((p) => validPaths.has(p));
+		if (cleaned.length !== this.plugin.settings.listOrder.length) {
+			this.plugin.settings.listOrder = cleaned;
+			await this.plugin.saveSettings();
+		}
+	}
+
+	private async reorderLists(orderedFilePaths: string[]): Promise<void> {
+		this.plugin.settings.listOrder = orderedFilePaths;
+		await this.plugin.saveSettings();
+		this.sortListsByOrder();
+		this.render();
 	}
 
 	private getActiveList(): TodoList | null {
@@ -135,7 +166,8 @@ export class ZenTodoView extends ItemView {
 				this.editingNotesFor = null;
 				this.render();
 			},
-			() => this.createNewList()
+			() => this.createNewList(),
+			(orderedFilePaths) => this.reorderLists(orderedFilePaths)
 		);
 
 		const activeList = this.getActiveList();
