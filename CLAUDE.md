@@ -31,7 +31,8 @@ src/
     ├── list-selector.ts       # renderListSelector(): tab bar
     ├── task-input.ts          # renderTaskInput(): new task row
     ├── task-section.ts        # renderTaskSection(): incomplete / completed groups
-    └── task-item-renderer.ts  # renderTaskItem(): single row + inline edit
+    ├── task-item-renderer.ts  # renderTaskItem(): single row + inline edit
+    └── drag-handler.ts        # attachDragHandle(): pointer-based drag & drop reorder
 ```
 
 ### Data Flow
@@ -55,6 +56,16 @@ Vault (.md file)
 | `addingSubtaskFor` | `string \| null` | Task ID receiving a new subtask |
 | `isSaving` | `boolean` | Lock to prevent concurrent writes |
 | `refreshTimer` | `NodeJS.Timeout \| null` | Debounce handle for external changes |
+
+### Drag & Drop Reorder (`drag-handler.ts`)
+
+`attachDragHandle()` attaches a pointer-event-based drag handle to each task row:
+
+- **Scope**: reorders tasks within the same section only (incomplete ↔ incomplete, completed ↔ completed — never across sections)
+- **Visual feedback**: dragged item fades (`is-dragging`), a clone follows the cursor (`zen-todo-drag-clone`), a drop indicator line shows the insertion point (`zen-todo-drop-indicator`)
+- **Auto-scroll**: scrolls the `.zen-todo-content` container when the cursor nears the top/bottom edge
+- **Cancel**: `Escape` key cancels drag without reordering
+- `onReorder(orderedIds)` callback is called only when the result differs from the original order (skipped for single-item groups)
 
 ## Markdown Format
 

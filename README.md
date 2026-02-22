@@ -12,6 +12,7 @@ A minimalist todo manager for [Obsidian](https://obsidian.md) that stores tasks 
 - **Inline Editing** — Click any task to edit text directly in the UI
 - **External Sync** — Detects file changes made by other plugins or external editors and refreshes automatically
 - **Collapsible Completed Section** — Keep your workspace tidy by hiding done tasks
+- **Drag & Drop Reorder** — Drag the handle on any task row to reorder tasks within the same section
 
 ## Screenshot
 
@@ -53,6 +54,7 @@ Click the **+** icon on any root-level task to add a subtask beneath it.
 
 | Icon | Action |
 |------|--------|
+| ⠿ | Drag to reorder (drag handle, left edge) |
 | 📅 | Set / change due date |
 | ➕ | Add subtask |
 | 🗑️ | Delete task |
@@ -62,7 +64,7 @@ Click the **+** icon on any root-level task to add a subtask beneath it.
 | Key | Action |
 |-----|--------|
 | `Enter` | Save task text / add task |
-| `Escape` | Cancel inline edit |
+| `Escape` | Cancel inline edit / cancel drag |
 
 ## Markdown Format
 
