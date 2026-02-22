@@ -15,6 +15,7 @@ export class ZenTodoView extends ItemView {
 	private lists: TodoList[] = [];
 	private activeFilePath: string | null = null;
 	private addingSubtaskFor: string | null = null;
+	private editingNotesFor: string | null = null;
 	private isSaving = false;
 	private isDragging = false;
 	private refreshTimer: ReturnType<typeof setTimeout> | null = null;
@@ -131,6 +132,7 @@ export class ZenTodoView extends ItemView {
 			(fp) => {
 				this.activeFilePath = fp;
 				this.addingSubtaskFor = null;
+				this.editingNotesFor = null;
 				this.render();
 			},
 			() => this.createNewList()
@@ -169,10 +171,16 @@ export class ZenTodoView extends ItemView {
 			() => this.archiveAllCompleted(activeList),
 			{
 				addingSubtaskFor: this.addingSubtaskFor,
+				editingNotesFor: this.editingNotesFor,
 				onSubtaskSubmit: (parentTask, text) =>
 					this.addSubtask(activeList, parentTask, text),
 				onSubtaskCancel: () => {
 					this.addingSubtaskFor = null;
+					this.render();
+				},
+				onNotesSubmit: (task, notes) => this.saveNotes(activeList, task, notes),
+				onNotesCancel: () => {
+					this.editingNotesFor = null;
 					this.render();
 				},
 				onReorder: (orderedIds, parentTask) =>
@@ -206,6 +214,10 @@ export class ZenTodoView extends ItemView {
 				break;
 			case "archive":
 				await this.archiveTask(list, event.task);
+				break;
+			case "edit-notes":
+				this.editingNotesFor = event.task.id;
+				this.render();
 				break;
 		}
 	}
@@ -288,6 +300,12 @@ export class ZenTodoView extends ItemView {
 
 	private async editTask(list: TodoList, task: TaskItem, newText: string): Promise<void> {
 		task.text = newText;
+		await this.saveList(list);
+	}
+
+	private async saveNotes(list: TodoList, task: TaskItem, notes: string): Promise<void> {
+		task.notes = notes.trim() || undefined;
+		this.editingNotesFor = null;
 		await this.saveList(list);
 	}
 

@@ -35,6 +35,14 @@ function serializeTask(task: TaskItem, depth: number, lines: string[]): void {
 
 	lines.push(`${indent}- [${checkChar}] ${text}`);
 
+	// Notes: each line indented one level deeper than the task
+	if (task.notes) {
+		const noteIndent = "\t".repeat(depth + 1);
+		for (const noteLine of task.notes.split("\n")) {
+			lines.push(`${noteIndent}${noteLine}`);
+		}
+	}
+
 	// Subtasks: incomplete first, then completed
 	const incSub = task.subtasks.filter((t) => !t.completed);
 	const doneSub = task.subtasks.filter((t) => t.completed);

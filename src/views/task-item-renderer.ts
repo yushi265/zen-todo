@@ -3,7 +3,7 @@ import type { TaskItem } from "../types";
 import { isOverdue, isToday } from "../utils/date-utils";
 import { attachDragHandle } from "./drag-handler";
 
-export type TaskActionType = "toggle" | "delete" | "edit" | "add-subtask" | "set-due" | "archive";
+export type TaskActionType = "toggle" | "delete" | "edit" | "add-subtask" | "set-due" | "archive" | "edit-notes";
 
 export interface TaskActionEvent {
 	action: TaskActionType;
@@ -14,8 +14,11 @@ export interface TaskActionEvent {
 
 export interface RenderTaskOptions {
 	addingSubtaskFor?: string | null;
+	editingNotesFor?: string | null;
 	onSubtaskSubmit?: (parentTask: TaskItem, text: string) => void;
 	onSubtaskCancel?: () => void;
+	onNotesSubmit?: (task: TaskItem, notes: string) => void;
+	onNotesCancel?: () => void;
 	onReorder?: (orderedIds: string[], parentTask?: TaskItem) => void;
 	onDragStateChange?: (dragging: boolean) => void;
 }
@@ -171,6 +174,20 @@ export function renderTaskItem(
 		(dateInput as HTMLInputElement & { showPicker?: () => void }).showPicker?.();
 	});
 
+	// Notes button
+	const notesBtn = actionsEl.createEl("button", {
+		cls: `zen-todo-action-btn${task.notes ? " has-notes" : ""}`,
+		attr: {
+			"aria-label": "Edit notes",
+			"data-tooltip-position": "top",
+		},
+	});
+	setIcon(notesBtn, "message-square");
+	notesBtn.addEventListener("click", (e) => {
+		e.stopPropagation();
+		onAction({ action: "edit-notes", task, parentTask });
+	});
+
 	// Add subtask button (root tasks only, not completed)
 	if (!parentTask && !task.completed) {
 		const addSubBtn = actionsEl.createEl("button", {
@@ -253,6 +270,14 @@ export function renderTaskItem(
 			}
 
 			menu.addItem((item) => {
+				item.setTitle("Edit notes")
+					.setIcon("message-square")
+					.onClick(() => {
+						onAction({ action: "edit-notes", task, parentTask });
+					});
+			});
+
+			menu.addItem((item) => {
 				item.setTitle("Set due date")
 					.setIcon("calendar")
 					.onClick(() => {
@@ -292,6 +317,67 @@ export function renderTaskItem(
 			const touch = e.touches[0];
 			menu.showAtPosition({ x: touch.clientX, y: touch.clientY });
 		});
+	}
+
+	// Notes display (when not editing)
+	if (task.notes && options.editingNotesFor !== task.id) {
+		itemEl.createDiv({ cls: "zen-todo-task-notes", text: task.notes });
+	}
+
+	// Notes textarea (when editing)
+	if (options.editingNotesFor === task.id) {
+		const notesTextarea = itemEl.createEl("textarea", {
+			cls: "zen-todo-notes-textarea",
+			attr: { "aria-label": "Task notes" },
+		});
+		notesTextarea.value = task.notes ?? "";
+
+		let notesDone = false;
+
+		const commitNotes = () => {
+			if (notesDone) return;
+			notesDone = true;
+			options.onNotesSubmit?.(task, notesTextarea.value);
+		};
+
+		const cancelNotes = () => {
+			if (notesDone) return;
+			notesDone = true;
+			options.onNotesCancel?.();
+		};
+
+		notesTextarea.addEventListener("keydown", (e: KeyboardEvent) => {
+			if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !e.isComposing) {
+				e.preventDefault();
+				e.stopPropagation();
+				commitNotes();
+			} else if (e.key === "Escape") {
+				e.preventDefault();
+				cancelNotes();
+			}
+		}, true); // capture phase: intercept before Obsidian global hotkeys
+
+		const actionsEl = itemEl.createDiv({ cls: "zen-todo-notes-actions" });
+		const saveBtn = actionsEl.createEl("button", {
+			cls: "zen-todo-notes-save-btn",
+			attr: { type: "button", "aria-label": "Save notes (Cmd+Enter)" },
+		});
+		setIcon(saveBtn, "check");
+		saveBtn.createSpan({ text: "保存" });
+		saveBtn.addEventListener("click", () => {
+			commitNotes();
+		});
+
+		notesTextarea.addEventListener("blur", () => {
+			setTimeout(() => {
+				if (notesTextarea.isConnected) commitNotes();
+			}, 150);
+		});
+
+		setTimeout(() => {
+			notesTextarea.focus();
+			notesTextarea.setSelectionRange(notesTextarea.value.length, notesTextarea.value.length);
+		}, 0);
 	}
 
 	// Subtasks container

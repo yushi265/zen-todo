@@ -36,7 +36,27 @@ export function parseMarkdown(content: string): { title: string; tasks: TaskItem
 		}
 
 		const match = CHECKBOX_REGEX.exec(line);
-		if (!match) continue;
+		if (!match) {
+			// Collect indented non-checkbox lines as notes for the last task
+			if (stack.length > 0) {
+				const noteIndentMatch = /^(\s*)/.exec(line);
+				const noteIndent = noteIndentMatch ? noteIndentMatch[1].length : 0;
+				const noteText = line.trim();
+				if (noteText) {
+					// Find deepest task whose indent is shallower than this line
+					for (let i = stack.length - 1; i >= 0; i--) {
+						if (stack[i].indentLevel < noteIndent) {
+							const target = stack[i].task;
+							target.notes = target.notes
+								? target.notes + "\n" + noteText
+								: noteText;
+							break;
+						}
+					}
+				}
+			}
+			continue;
+		}
 
 		const [, indent, checkChar, rest] = match;
 		const indentLevel = indent.length;

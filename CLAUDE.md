@@ -22,8 +22,8 @@ src/
 ├── models/
 │   └── task.ts                # Pure functions: createTask, completeTask, cleanTaskText, etc.
 ├── parser/
-│   ├── markdown-parser.ts     # parseTodoMarkdown(): Markdown string → TodoList
-│   └── markdown-serializer.ts # serializeTodoList(): TodoList → Markdown string
+│   ├── markdown-parser.ts     # parseMarkdown(): Markdown string → { title, tasks, archivedSection }
+│   └── markdown-serializer.ts # serializeToMarkdown(): TodoList → Markdown string; serializeTaskToLines(): single task → lines
 ├── utils/
 │   └── date-utils.ts          # formatDate, today, isOverdue, isToday
 └── views/
@@ -54,7 +54,9 @@ Vault (.md file)
 | `lists` | `TodoList[]` | All loaded todo lists |
 | `activeFilePath` | `string \| null` | Currently selected list |
 | `addingSubtaskFor` | `string \| null` | Task ID receiving a new subtask |
+| `editingNotesFor` | `string \| null` | Task ID whose notes textarea is open |
 | `isSaving` | `boolean` | Lock to prevent concurrent writes |
+| `isDragging` | `boolean` | True while a drag is in progress (suppresses external-change refresh) |
 | `refreshTimer` | `NodeJS.Timeout \| null` | Debounce handle for external changes |
 
 ### Drag & Drop Reorder (`drag-handler.ts`)
@@ -73,13 +75,20 @@ Vault (.md file)
 # List Title
 
 - [ ] Incomplete task 📅 2026-03-01
+	Note text for this task (indented, non-checkbox line)
 	- [x] Completed subtask ✅ 2026-02-20
 - [x] Completed task ✅ 2026-02-22
+
+## Archived
+
+- [x] Old archived task ✅ 2026-01-10
 ```
 
 - **Tab indentation** for subtask nesting (never spaces)
 - `📅 YYYY-MM-DD` — due date marker (defined in `constants.ts`)
 - `✅ YYYY-MM-DD` — completion date marker
+- **Notes**: indented non-checkbox lines immediately below a task are parsed into `TaskItem.notes`; serialized one indent level deeper than the task
+- **Archived section**: `## Archived` heading at the end of the file stores archived tasks as raw Markdown; parsed into `TodoList.archivedSection` and preserved verbatim on every save
 - Serializer always orders: incomplete tasks first, completed tasks last (both at root and subtask levels)
 - Parser uses a **stack-based algorithm** and avoids lookbehind regex for iOS < 16.4 compatibility
 
@@ -152,7 +161,7 @@ Defined in `types.ts` as `ZenTodoSettings` and defaulted in `constants.ts`:
 
 ### Add a new task action
 
-1. Add the action type to `TaskActionType` union in `types.ts`
+1. Add the action type to `TaskActionType` union in `task-item-renderer.ts`
 2. Add a button/handler in `task-item-renderer.ts`
 3. Handle the `TaskActionEvent` in `ZenTodoView.handleTaskAction()` in `todo-view.ts`
 4. Add a pure function for any data mutation in `models/task.ts`

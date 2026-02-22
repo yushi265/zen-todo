@@ -4,6 +4,7 @@ export interface TaskItem {
 	completed: boolean;
 	dueDate?: string; // YYYY-MM-DD
 	doneDate?: string; // YYYY-MM-DD
+	notes?: string;
 	subtasks: TaskItem[];
 	indentLevel: number;
 }

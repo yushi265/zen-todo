@@ -7,12 +7,14 @@ A minimalist todo manager for [Obsidian](https://obsidian.md) that stores tasks 
 - **Multiple Lists** — Create and switch between separate todo list files
 - **Subtasks** — Nest tasks with automatic indentation tracking
 - **Due Dates** — Set due dates with color-coded status (overdue / today)
+- **Task Notes** — Attach free-form notes to any task; stored as indented lines in Markdown
 - **Tasks-Plugin Compatible Format** — Uses standard `📅` / `✅` emoji markers in Markdown so files remain readable by the Tasks plugin
 - **Auto-Complete Parent** — Optionally mark parent tasks complete when all subtasks are done
 - **Inline Editing** — Click any task to edit text directly in the UI
 - **External Sync** — Detects file changes made by other plugins or external editors and refreshes automatically
 - **Collapsible Completed Section** — Keep your workspace tidy by hiding done tasks
 - **Drag & Drop Reorder** — Drag the handle on any task row to reorder tasks within the same section
+- **Archive** — Move completed tasks to a preserved `## Archived` section at the bottom of the file
 
 ## Screenshot
 
@@ -56,7 +58,9 @@ Click the **+** icon on any root-level task to add a subtask beneath it.
 |------|--------|
 | ⠿ | Drag to reorder (drag handle, left edge) |
 | 📅 | Set / change due date |
-| ➕ | Add subtask |
+| 💬 | Add / edit notes |
+| ➕ | Add subtask (incomplete root tasks only) |
+| 🗃️ | Archive task (completed root tasks only) |
 | 🗑️ | Delete task |
 
 ### Keyboard Shortcuts
@@ -64,7 +68,8 @@ Click the **+** icon on any root-level task to add a subtask beneath it.
 | Key | Action |
 |-----|--------|
 | `Enter` | Save task text / add task |
-| `Escape` | Cancel inline edit / cancel drag |
+| `Cmd+Enter` (or `Ctrl+Enter`) | Save notes |
+| `Escape` | Cancel inline edit / cancel drag / cancel notes edit |
 
 ## Markdown Format
 
@@ -74,8 +79,13 @@ Tasks are stored as standard Markdown checkboxes. The format is intentionally ke
 # Shopping List
 
 - [ ] Buy milk 📅 2026-03-01
+	Remember to check the organic section
 	- [x] Check expiry date ✅ 2026-02-22
 - [x] Return library books ✅ 2026-02-20
+
+## Archived
+
+- [x] Old completed task ✅ 2026-01-15
 ```
 
 | Element | Meaning |
@@ -85,6 +95,8 @@ Tasks are stored as standard Markdown checkboxes. The format is intentionally ke
 | Tab indentation | Subtask nesting |
 | `📅 YYYY-MM-DD` | Due date |
 | `✅ YYYY-MM-DD` | Completion date |
+| Indented non-checkbox line | Task note |
+| `## Archived` section | Archived completed tasks (preserved verbatim) |
 
 ## Settings
 
