@@ -547,3 +547,37 @@ body.is-mobile .zen-todo-drag-handle {
 	outline: none;
 	border-color: var(--interactive-accent);
 }
+
+/* --------------------------------------------------------------------------
+   Archive buttons
+   -------------------------------------------------------------------------- */
+
+.zen-todo-archive-btn:hover {
+	color: var(--interactive-accent);
+}
+
+.zen-todo-archive-all-btn {
+	display: none;
+	margin-left: auto;
+	background: none;
+	border: none;
+	padding: 2px 4px;
+	cursor: pointer;
+	color: var(--text-muted);
+	line-height: 1;
+}
+
+.zen-todo-completed-summary:hover .zen-todo-archive-all-btn {
+	display: inline-flex;
+	align-items: center;
+}
+
+.zen-todo-archive-all-btn:hover {
+	color: var(--interactive-accent);
+}
+
+.zen-todo-completed-summary {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-1);
+}

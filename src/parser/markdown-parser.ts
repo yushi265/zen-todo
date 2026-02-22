@@ -5,14 +5,24 @@ import { createTaskId } from "../models/task";
 // Note: No lookbehind regex used (iOS < 16.4 incompatibility)
 const CHECKBOX_REGEX = /^(\s*)- \[([ xX])\]\s+(.*)/;
 
-export function parseMarkdown(content: string): { title: string; tasks: TaskItem[] } {
+export function parseMarkdown(content: string): { title: string; tasks: TaskItem[]; archivedSection?: string } {
 	// Create regex instances per call to avoid global lastIndex issues
 	const dueDateRegex = new RegExp(`${DUE_DATE_EMOJI}\\s+(\\d{4}-\\d{2}-\\d{2})`);
 	const doneDateRegex = new RegExp(`${DONE_DATE_EMOJI}\\s+(\\d{4}-\\d{2}-\\d{2})`);
 	const cleanupDue = new RegExp(`${DUE_DATE_EMOJI}\\s+\\d{4}-\\d{2}-\\d{2}`, "g");
 	const cleanupDone = new RegExp(`${DONE_DATE_EMOJI}\\s+\\d{4}-\\d{2}-\\d{2}`, "g");
 
-	const lines = content.split("\n");
+	// Split out the ## Archived section before parsing tasks
+	const ARCHIVED_HEADING = "\n## Archived";
+	const archivedIdx = content.indexOf(ARCHIVED_HEADING);
+	let archivedSection: string | undefined;
+	let mainContent = content;
+	if (archivedIdx !== -1) {
+		archivedSection = content.slice(archivedIdx + 1); // keep "## Archived\n..."
+		mainContent = content.slice(0, archivedIdx);
+	}
+
+	const lines = mainContent.split("\n");
 	let title = "";
 	const rootTasks: TaskItem[] = [];
 	// Stack tracks parent tasks by indent level
@@ -62,5 +72,5 @@ export function parseMarkdown(content: string): { title: string; tasks: TaskItem
 		stack.push({ task, indentLevel });
 	}
 
-	return { title: title || "Untitled", tasks: rootTasks };
+	return { title: title || "Untitled", tasks: rootTasks, archivedSection };
 }

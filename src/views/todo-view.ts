@@ -2,7 +2,7 @@ import { ItemView, WorkspaceLeaf, TFile, Modal, App, normalizePath } from "obsid
 import { VIEW_TYPE_ZEN_TODO } from "../constants";
 import type { TodoList, TaskItem, ZenTodoSettings } from "../types";
 import { parseMarkdown } from "../parser/markdown-parser";
-import { serializeToMarkdown } from "../parser/markdown-serializer";
+import { serializeToMarkdown, serializeTaskToLines } from "../parser/markdown-serializer";
 import { renderListSelector } from "./list-selector";
 import { renderTaskInput } from "./task-input";
 import { renderTaskSection } from "./task-section";
@@ -98,8 +98,8 @@ export class ZenTodoView extends ItemView {
 		this.lists = await Promise.all(
 			files.map(async (file) => {
 				const content = await this.app.vault.read(file);
-				const { title, tasks } = parseMarkdown(content);
-				return { filePath: file.path, title, tasks };
+				const { title, tasks, archivedSection } = parseMarkdown(content);
+				return { filePath: file.path, title, tasks, archivedSection };
 			})
 		);
 
@@ -166,6 +166,7 @@ export class ZenTodoView extends ItemView {
 			complete,
 			this.plugin.settings.showCompletedByDefault,
 			(event) => this.handleTaskAction(activeList, event),
+			() => this.archiveAllCompleted(activeList),
 			{
 				addingSubtaskFor: this.addingSubtaskFor,
 				onSubtaskSubmit: (parentTask, text) =>
@@ -202,6 +203,9 @@ export class ZenTodoView extends ItemView {
 				break;
 			case "set-due":
 				await this.setDueDate(list, event.task, event.value, event.parentTask);
+				break;
+			case "archive":
+				await this.archiveTask(list, event.task);
 				break;
 		}
 	}
@@ -257,6 +261,31 @@ export class ZenTodoView extends ItemView {
 		await this.saveList(list);
 	}
 
+	private async archiveTask(list: TodoList, task: TaskItem): Promise<void> {
+		const lines = serializeTaskToLines(task);
+		const block = lines.join("\n");
+		if (list.archivedSection) {
+			list.archivedSection = list.archivedSection + "\n" + block;
+		} else {
+			list.archivedSection = "## Archived\n\n" + block;
+		}
+		list.tasks = list.tasks.filter((t) => t.id !== task.id);
+		await this.saveList(list);
+	}
+
+	private async archiveAllCompleted(list: TodoList): Promise<void> {
+		const completed = list.tasks.filter((t) => t.completed);
+		if (completed.length === 0) return;
+		const block = completed.flatMap((t) => serializeTaskToLines(t)).join("\n");
+		if (list.archivedSection) {
+			list.archivedSection = list.archivedSection + "\n" + block;
+		} else {
+			list.archivedSection = "## Archived\n\n" + block;
+		}
+		list.tasks = list.tasks.filter((t) => !t.completed);
+		await this.saveList(list);
+	}
+
 	private async editTask(list: TodoList, task: TaskItem, newText: string): Promise<void> {
 		task.text = newText;
 		await this.saveList(list);
@@ -306,7 +335,7 @@ export class ZenTodoView extends ItemView {
 		const abstract = this.app.vault.getAbstractFileByPath(list.filePath);
 		if (!(abstract instanceof TFile)) return;
 
-		const content = serializeToMarkdown(list.title, list.tasks);
+		const content = serializeToMarkdown(list.title, list.tasks, list.archivedSection);
 		this.isSaving = true;
 		try {
 			await this.app.vault.process(abstract, () => content);

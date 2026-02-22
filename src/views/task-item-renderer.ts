@@ -3,7 +3,7 @@ import type { TaskItem } from "../types";
 import { isOverdue, isToday } from "../utils/date-utils";
 import { attachDragHandle } from "./drag-handler";
 
-export type TaskActionType = "toggle" | "delete" | "edit" | "add-subtask" | "set-due";
+export type TaskActionType = "toggle" | "delete" | "edit" | "add-subtask" | "set-due" | "archive";
 
 export interface TaskActionEvent {
 	action: TaskActionType;
@@ -187,6 +187,22 @@ export function renderTaskItem(
 		});
 	}
 
+	// Archive button (completed root tasks only)
+	if (!parentTask && task.completed) {
+		const archiveBtn = actionsEl.createEl("button", {
+			cls: "zen-todo-action-btn zen-todo-archive-btn",
+			attr: {
+				"aria-label": "Archive task",
+				"data-tooltip-position": "top",
+			},
+		});
+		setIcon(archiveBtn, "archive");
+		archiveBtn.addEventListener("click", (e) => {
+			e.stopPropagation();
+			onAction({ action: "archive", task, parentTask });
+		});
+	}
+
 	// Delete button
 	const delBtn = actionsEl.createEl("button", {
 		cls: "zen-todo-action-btn zen-todo-delete-btn",
@@ -254,6 +270,16 @@ export function renderTaskItem(
 						try { (tmpDate as HTMLInputElement & { showPicker?: () => void }).showPicker?.(); } catch { tmpDate.click(); }
 					});
 			});
+
+			if (!parentTask && task.completed) {
+				menu.addItem((item) => {
+					item.setTitle("Archive")
+						.setIcon("archive")
+						.onClick(() => {
+							onAction({ action: "archive", task, parentTask });
+						});
+				});
+			}
 
 			menu.addItem((item) => {
 				item.setTitle("Delete")

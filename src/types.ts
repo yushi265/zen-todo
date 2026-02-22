@@ -12,6 +12,7 @@ export interface TodoList {
 	filePath: string;
 	title: string;
 	tasks: TaskItem[];
+	archivedSection?: string;
 }
 
 export interface ZenTodoSettings {

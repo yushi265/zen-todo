@@ -1,3 +1,4 @@
+import { setIcon } from "obsidian";
 import type { TaskItem } from "../types";
 import {
 	renderTaskItem,
@@ -11,6 +12,7 @@ export function renderTaskSection(
 	complete: TaskItem[],
 	showCompleted: boolean,
 	onAction: (event: TaskActionEvent) => void,
+	onArchiveAll?: () => void,
 	options: RenderTaskOptions = {}
 ): void {
 	// Incomplete tasks
@@ -34,10 +36,25 @@ export function renderTaskSection(
 		});
 		if (showCompleted) details.setAttribute("open", "");
 
-		details.createEl("summary", {
+		const summary = details.createEl("summary", {
 			cls: "zen-todo-completed-summary",
-			text: `Completed (${complete.length})`,
 		});
+		summary.createSpan({ text: `Completed (${complete.length})` });
+
+		if (onArchiveAll) {
+			const archiveAllBtn = summary.createEl("button", {
+				cls: "zen-todo-archive-all-btn",
+				attr: {
+					"aria-label": "Archive all completed",
+					"data-tooltip-position": "top",
+				},
+			});
+			setIcon(archiveAllBtn, "archive");
+			archiveAllBtn.addEventListener("click", (e) => {
+				e.stopPropagation();
+				onArchiveAll();
+			});
+		}
 
 		for (const task of complete) {
 			renderTaskItem(details, task, onAction, undefined, options);

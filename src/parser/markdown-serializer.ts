@@ -1,7 +1,7 @@
 import type { TaskItem } from "../types";
 import { DUE_DATE_EMOJI, DONE_DATE_EMOJI } from "../constants";
 
-export function serializeToMarkdown(title: string, tasks: TaskItem[]): string {
+export function serializeToMarkdown(title: string, tasks: TaskItem[], archivedSection?: string): string {
 	const lines: string[] = [`# ${title}`, ""];
 
 	// Incomplete tasks first, then completed
@@ -11,7 +11,18 @@ export function serializeToMarkdown(title: string, tasks: TaskItem[]): string {
 	for (const task of incomplete) serializeTask(task, 0, lines);
 	for (const task of complete) serializeTask(task, 0, lines);
 
-	return lines.join("\n") + "\n";
+	let result = lines.join("\n") + "\n";
+	if (archivedSection) {
+		result += "\n" + archivedSection;
+	}
+	return result;
+}
+
+/** Convert a single task (with subtasks) to Markdown lines for archiving. */
+export function serializeTaskToLines(task: TaskItem): string[] {
+	const lines: string[] = [];
+	serializeTask(task, 0, lines);
+	return lines;
 }
 
 function serializeTask(task: TaskItem, depth: number, lines: string[]): void {
