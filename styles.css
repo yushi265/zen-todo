@@ -268,13 +268,13 @@
 }
 
 .zen-todo-due-badge.is-overdue {
-	background: var(--background-modifier-error);
-	color: var(--text-error);
+	background: color-mix(in srgb, var(--color-red) 14%, transparent);
+	color: var(--color-red);
 }
 
 .zen-todo-due-badge.is-today {
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background: color-mix(in srgb, var(--color-green) 14%, transparent);
+	color: var(--color-green);
 }
 
 /* --------------------------------------------------------------------------
