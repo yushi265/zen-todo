@@ -698,3 +698,21 @@ body.is-mobile .zen-todo-drag-handle {
 	align-items: center;
 	gap: var(--size-4-1);
 }
+
+/* --------------------------------------------------------------------------
+   Embedded (code block) mode
+   -------------------------------------------------------------------------- */
+
+.zen-todo-embedded {
+	height: auto;
+	max-height: 600px;
+	overflow: hidden;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	margin: var(--size-4-2) 0;
+}
+
+.zen-todo-embedded .zen-todo-content {
+	max-height: 450px;
+	overflow-y: auto;
+}
