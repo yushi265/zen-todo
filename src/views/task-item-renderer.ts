@@ -1,6 +1,7 @@
 import { setIcon, Menu, Platform } from "obsidian";
 import type { TaskItem } from "../types";
 import { isOverdue, isToday } from "../utils/date-utils";
+import { attachDragHandle } from "./drag-handler";
 
 export type TaskActionType = "toggle" | "delete" | "edit" | "add-subtask" | "set-due";
 
@@ -15,6 +16,8 @@ export interface RenderTaskOptions {
 	addingSubtaskFor?: string | null;
 	onSubtaskSubmit?: (parentTask: TaskItem, text: string) => void;
 	onSubtaskCancel?: () => void;
+	onReorder?: (orderedIds: string[], parentTask?: TaskItem) => void;
+	onDragStateChange?: (dragging: boolean) => void;
 }
 
 export function renderTaskItem(
@@ -26,6 +29,7 @@ export function renderTaskItem(
 ): void {
 	const itemEl = container.createDiv({
 		cls: `zen-todo-task-item${task.completed ? " is-completed" : ""}`,
+		attr: { "data-task-id": task.id },
 	});
 
 	// Row wrapper: checkbox + content + badges + actions (horizontal)
@@ -197,6 +201,18 @@ export function renderTaskItem(
 		onAction({ action: "delete", task, parentTask });
 	});
 
+	// Drag handle
+	if (options.onReorder) {
+		attachDragHandle(
+			itemEl,
+			rowEl,
+			container,
+			task.id,
+			(orderedIds) => options.onReorder!(orderedIds, parentTask),
+			options.onDragStateChange
+		);
+	}
+
 	// ── Mobile: long-press context menu ──
 	if (Platform.isMobile) {
 		addLongPressHandler(rowEl, (e) => {
@@ -256,7 +272,7 @@ export function renderTaskItem(
 	if (task.subtasks.length > 0 || options.addingSubtaskFor === task.id) {
 		const subtasksEl = itemEl.createDiv({ cls: "zen-todo-subtasks" });
 		for (const subtask of task.subtasks) {
-			renderTaskItem(subtasksEl, subtask, onAction, task);
+			renderTaskItem(subtasksEl, subtask, onAction, task, options);
 		}
 		if (options.addingSubtaskFor === task.id && options.onSubtaskSubmit) {
 			renderSubtaskInput(subtasksEl, task, options.onSubtaskSubmit, options.onSubtaskCancel ?? (() => {}));

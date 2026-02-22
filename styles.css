@@ -434,6 +434,97 @@ details[open] > .zen-todo-completed-summary::before {
 }
 
 /* --------------------------------------------------------------------------
+   Drag & Drop
+   -------------------------------------------------------------------------- */
+
+/* Drag handle */
+.zen-todo-drag-handle {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	cursor: grab;
+	color: var(--text-faint);
+	flex-shrink: 0;
+	border-radius: var(--radius-s);
+	opacity: 0;
+	transition: opacity 0.1s ease;
+	touch-action: none;
+}
+
+.zen-todo-task-item:hover .zen-todo-drag-handle {
+	opacity: 1;
+}
+
+.zen-todo-drag-handle:hover {
+	color: var(--text-muted);
+	background: var(--background-modifier-hover);
+}
+
+.zen-todo-drag-handle:active {
+	cursor: grabbing;
+}
+
+body.is-mobile .zen-todo-drag-handle {
+	opacity: 0.6;
+	width: 28px;
+	height: 28px;
+}
+
+/* Dragging state */
+.zen-todo-task-item.is-dragging {
+	opacity: 0.4;
+}
+
+.zen-todo-drag-clone {
+	position: absolute;
+	left: 0;
+	right: 0;
+	pointer-events: none;
+	z-index: 1000;
+	opacity: 0.9;
+	background: var(--background-primary);
+	border: 1px solid var(--interactive-accent);
+	border-radius: var(--radius-s);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	overflow: hidden;
+}
+
+.zen-todo-drop-indicator {
+	position: absolute;
+	left: var(--size-4-2);
+	right: var(--size-4-2);
+	height: 3px;
+	background: var(--interactive-accent);
+	border-radius: 2px;
+	pointer-events: none;
+	z-index: 999;
+	box-shadow: 0 0 6px var(--interactive-accent);
+}
+
+.zen-todo-drop-indicator::before {
+	content: "";
+	position: absolute;
+	left: -4px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--interactive-accent);
+	box-shadow: 0 0 4px var(--interactive-accent);
+}
+
+.zen-todo-view.is-reordering {
+	user-select: none;
+}
+
+.zen-todo-view.is-reordering * {
+	cursor: grabbing !important;
+}
+
+/* --------------------------------------------------------------------------
    Modal — new list name input
    -------------------------------------------------------------------------- */
 

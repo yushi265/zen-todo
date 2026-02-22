@@ -16,6 +16,7 @@ export class ZenTodoView extends ItemView {
 	private activeFilePath: string | null = null;
 	private addingSubtaskFor: string | null = null;
 	private isSaving = false;
+	private isDragging = false;
 	private refreshTimer: ReturnType<typeof setTimeout> | null = null;
 	private shouldFocusTaskInput = false;
 
@@ -59,7 +60,7 @@ export class ZenTodoView extends ItemView {
 
 	/** Called by main.ts when a todo file changes externally. */
 	onExternalChange(_filePath: string): void {
-		if (this.isSaving) return;
+		if (this.isSaving || this.isDragging) return;
 		if (this.refreshTimer) clearTimeout(this.refreshTimer);
 		this.refreshTimer = setTimeout(async () => {
 			await this.loadLists();
@@ -173,6 +174,11 @@ export class ZenTodoView extends ItemView {
 					this.addingSubtaskFor = null;
 					this.render();
 				},
+				onReorder: (orderedIds, parentTask) =>
+					this.reorderTasks(activeList, orderedIds, parentTask),
+				onDragStateChange: (dragging) => {
+					this.isDragging = dragging;
+				},
 			}
 		);
 	}
@@ -263,6 +269,36 @@ export class ZenTodoView extends ItemView {
 		_parentTask?: TaskItem
 	): Promise<void> {
 		task.dueDate = dueDate;
+		await this.saveList(list);
+	}
+
+	private async reorderTasks(
+		list: TodoList,
+		orderedIds: string[],
+		parentTask?: TaskItem
+	): Promise<void> {
+		const source = parentTask ? parentTask.subtasks : list.tasks;
+		const idToTask = new Map(source.map((t) => [t.id, t]));
+		const firstTask = idToTask.get(orderedIds[0]);
+		if (!firstTask) return;
+		const reorderedIsIncomplete = !firstTask.completed;
+
+		const otherGroup = source.filter((t) =>
+			reorderedIsIncomplete ? t.completed : !t.completed
+		);
+		const reordered = orderedIds
+			.map((id) => idToTask.get(id))
+			.filter((t): t is TaskItem => t !== undefined);
+
+		const newOrder = reorderedIsIncomplete
+			? [...reordered, ...otherGroup]
+			: [...otherGroup, ...reordered];
+
+		if (parentTask) {
+			parentTask.subtasks = newOrder;
+		} else {
+			list.tasks = newOrder;
+		}
 		await this.saveList(list);
 	}
 
