@@ -278,6 +278,14 @@
 	color: var(--color-green);
 }
 
+/* Created date badge */
+.zen-todo-created-badge {
+	font-size: var(--font-smallest);
+	color: var(--text-muted);
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
 /* --------------------------------------------------------------------------
    Task actions (hover)
    -------------------------------------------------------------------------- */
