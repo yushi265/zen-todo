@@ -406,6 +406,9 @@ export class ZenTodoController {
       case "insert-link":
         this.insertLink(list, event.task);
         break;
+      case "remove-link":
+        await this.removeLink(list, event.task);
+        break;
       case "move":
         if (event.targetFilePath) {
           await this.moveTask(list, event.task, event.targetFilePath);
@@ -467,6 +470,30 @@ export class ZenTodoController {
       await this.app.vault.create(filePath, "");
     }
     task.text = `[[${task.text}]]`;
+    await this.saveList(list);
+  }
+
+  private async removeLink(list: TodoList, task: TaskItem): Promise<void> {
+    const linkMatch = task.text.match(/^\[\[([^\]]+)\]\]$/);
+    if (!linkMatch) return;
+    const linkTarget = linkMatch[1];
+
+    const confirmed = await new Promise<boolean>((resolve) => {
+      const modal = new ConfirmModal(
+        this.app,
+        "Remove link",
+        `"${linkTarget}" のリンク先ノートをゴミ箱に移動し、リンクを解除しますか？`,
+        resolve,
+      );
+      modal.open();
+    });
+    if (!confirmed) return;
+
+    const file = this.app.metadataCache.getFirstLinkpathDest(linkTarget, list.filePath);
+    if (file instanceof TFile) {
+      await this.app.vault.trash(file, true);
+    }
+    task.text = linkTarget;
     await this.saveList(list);
   }
 
@@ -696,6 +723,48 @@ class NewListModal extends Modal {
   }
 
   onClose(): void {
+    this.contentEl.empty();
+  }
+}
+
+// ------------------------------------------------------------------ //
+// Confirm modal
+// ------------------------------------------------------------------ //
+
+class ConfirmModal extends Modal {
+  private title: string;
+  private message: string;
+  private resolve: (value: boolean) => void;
+  private resolved = false;
+
+  constructor(app: App, title: string, message: string, resolve: (value: boolean) => void) {
+    super(app);
+    this.title = title;
+    this.message = message;
+    this.resolve = resolve;
+  }
+
+  onOpen(): void {
+    const { contentEl } = this;
+    contentEl.createEl("h2", { text: this.title });
+    contentEl.createEl("p", { text: this.message });
+
+    const btnContainer = contentEl.createDiv({ cls: "modal-button-container" });
+    btnContainer.createEl("button", { text: "Cancel" }).addEventListener("click", () => {
+      this.resolved = true;
+      this.resolve(false);
+      this.close();
+    });
+    const removeBtn = btnContainer.createEl("button", { cls: "mod-warning", text: "Remove" });
+    removeBtn.addEventListener("click", () => {
+      this.resolved = true;
+      this.resolve(true);
+      this.close();
+    });
+  }
+
+  onClose(): void {
+    if (!this.resolved) this.resolve(false);
     this.contentEl.empty();
   }
 }

@@ -13,6 +13,7 @@ export type TaskActionType =
   | "archive"
   | "edit-notes"
   | "insert-link"
+  | "remove-link"
   | "move";
 
 export interface TaskActionEvent {
@@ -290,18 +291,19 @@ export function renderTaskItem(
     onAction({ action: "edit-notes", task, parentTask });
   });
 
-  // Link button
+  // Link button (toggles based on link state)
+  const isLinked = task.text.includes("[[");
   const linkBtn = actionsEl.createEl("button", {
     cls: "zen-todo-action-btn",
     attr: {
-      "aria-label": "Insert link",
+      "aria-label": isLinked ? "Remove link" : "Insert link",
       "data-tooltip-position": "top",
     },
   });
-  setIcon(linkBtn, "link");
+  setIcon(linkBtn, isLinked ? "unlink" : "link");
   linkBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-    onAction({ action: "insert-link", task, parentTask });
+    onAction({ action: isLinked ? "remove-link" : "insert-link", task, parentTask });
   });
 
   // Add subtask button (root tasks only, not completed)
@@ -424,11 +426,12 @@ export function renderTaskItem(
       });
 
       menu.addItem((item) => {
+        const mIsLinked = task.text.includes("[[");
         item
-          .setTitle("Insert link")
-          .setIcon("link")
+          .setTitle(mIsLinked ? "Remove link" : "Insert link")
+          .setIcon(mIsLinked ? "unlink" : "link")
           .onClick(() => {
-            onAction({ action: "insert-link", task, parentTask });
+            onAction({ action: mIsLinked ? "remove-link" : "insert-link", task, parentTask });
           });
       });
 
