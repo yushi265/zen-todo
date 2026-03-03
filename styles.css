@@ -803,3 +803,104 @@ body.is-mobile .zen-todo-drag-handle {
 	color: var(--text-normal);
 	font-size: var(--font-ui-small);
 }
+
+/* --------------------------------------------------------------------------
+   Query view
+   -------------------------------------------------------------------------- */
+
+.zen-todo-query-header {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	padding: var(--size-4-2) var(--size-4-3);
+	border-bottom: 1px solid var(--background-modifier-border);
+	flex-shrink: 0;
+}
+
+.zen-todo-query-title {
+	font-weight: var(--font-semibold);
+	color: var(--text-accent);
+	font-size: var(--font-ui-small);
+	font-family: var(--font-interface);
+}
+
+.zen-todo-query-count {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	font-family: var(--font-interface);
+}
+
+.zen-todo-query-error {
+	color: var(--text-error);
+	background: var(--background-modifier-error);
+	padding: var(--size-4-1) var(--size-4-3);
+	font-size: var(--font-ui-small);
+	font-family: var(--font-interface);
+	border-radius: var(--radius-s);
+	margin: var(--size-4-1) var(--size-4-2);
+}
+
+.zen-todo-query-group {
+	margin-bottom: var(--size-4-3);
+}
+
+.zen-todo-query-group:last-child {
+	margin-bottom: 0;
+}
+
+.zen-todo-query-group-header {
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	padding: var(--size-4-2) var(--size-4-3) var(--size-4-1);
+	font-family: var(--font-interface);
+}
+
+.zen-todo-query-task-item {
+	border-radius: var(--radius-s);
+}
+
+.zen-todo-query-task-item.is-completed .zen-todo-query-task-text {
+	color: var(--text-muted);
+	text-decoration: line-through;
+}
+
+.zen-todo-query-task-row {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	padding: var(--size-4-1) var(--size-4-3);
+	min-height: 36px;
+	border-radius: var(--radius-s);
+}
+
+.zen-todo-query-task-row:hover {
+	background: var(--background-modifier-hover);
+}
+
+.zen-todo-query-task-text {
+	flex: 1;
+	font-size: var(--font-ui-small);
+	font-family: var(--font-interface);
+	color: var(--text-normal);
+}
+
+.zen-todo-query-task-text .internal-link {
+	color: var(--link-color);
+	text-decoration-line: var(--link-decoration);
+	cursor: var(--cursor-link);
+}
+
+.zen-todo-query-task-text .internal-link:hover {
+	color: var(--link-color-hover);
+}
+
+.zen-todo-query-empty {
+	text-align: center;
+	color: var(--text-muted);
+	padding: var(--size-4-8) var(--size-4-4);
+	font-size: var(--font-ui-small);
+	font-family: var(--font-interface);
+}

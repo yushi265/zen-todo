@@ -492,7 +492,7 @@ export function renderTaskItem(
   }
 }
 
-function renderWikiLinkedText(
+export function renderWikiLinkedText(
   container: HTMLElement,
   text: string,
   app: App,
