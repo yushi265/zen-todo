@@ -12,13 +12,15 @@ export type TaskActionType =
   | "set-due"
   | "archive"
   | "edit-notes"
-  | "insert-link";
+  | "insert-link"
+  | "move";
 
 export interface TaskActionEvent {
   action: TaskActionType;
   task: TaskItem;
   value?: string;
   parentTask?: TaskItem;
+  targetFilePath?: string;
 }
 
 export interface RenderTaskOptions {
@@ -32,6 +34,7 @@ export interface RenderTaskOptions {
   onDragStateChange?: (dragging: boolean) => void;
   app?: App;
   sourcePath?: string;
+  moveTargets?: { filePath: string; title: string }[];
 }
 
 export function renderTaskItem(
@@ -317,6 +320,33 @@ export function renderTaskItem(
     });
   }
 
+  // Move button (root tasks only, when move targets are available)
+  if (!parentTask && options.moveTargets && options.moveTargets.length > 0) {
+    const moveBtn = actionsEl.createEl("button", {
+      cls: "zen-todo-action-btn",
+      attr: {
+        "aria-label": "Move to list",
+        "data-tooltip-position": "top",
+      },
+    });
+    setIcon(moveBtn, "arrow-right-from-line");
+    moveBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const menu = new Menu();
+      for (const target of options.moveTargets!) {
+        menu.addItem((item) => {
+          item
+            .setTitle(target.title)
+            .setIcon("file-text")
+            .onClick(() => {
+              onAction({ action: "move", task, targetFilePath: target.filePath });
+            });
+        });
+      }
+      menu.showAtPosition({ x: e.clientX, y: e.clientY });
+    });
+  }
+
   // Archive button (completed root tasks only)
   if (!parentTask && task.completed) {
     const archiveBtn = actionsEl.createEl("button", {
@@ -436,6 +466,29 @@ export function renderTaskItem(
             }
           });
       });
+
+      if (!parentTask && options.moveTargets && options.moveTargets.length > 0) {
+        menu.addItem((item) => {
+          item
+            .setTitle("Move to...")
+            .setIcon("arrow-right-from-line")
+            .onClick(() => {
+              const moveMenu = new Menu();
+              for (const target of options.moveTargets!) {
+                moveMenu.addItem((mi) => {
+                  mi
+                    .setTitle(target.title)
+                    .setIcon("file-text")
+                    .onClick(() => {
+                      onAction({ action: "move", task, targetFilePath: target.filePath });
+                    });
+                });
+              }
+              const touch2 = e.touches[0];
+              moveMenu.showAtPosition({ x: touch2.clientX, y: touch2.clientY });
+            });
+        });
+      }
 
       if (!parentTask && task.completed) {
         menu.addItem((item) => {

@@ -815,3 +815,56 @@ body.is-mobile .zen-todo-drag-handle {
 	color: var(--text-muted);
 	text-decoration-line: line-through;
 }
+
+/* --------------------------------------------------------------------------
+   "All" tab
+   -------------------------------------------------------------------------- */
+
+.zen-todo-tab-all {
+	font-style: italic;
+}
+
+/* --------------------------------------------------------------------------
+   All view — list groups
+   -------------------------------------------------------------------------- */
+
+.zen-todo-all-group {
+	margin-bottom: var(--size-4-4);
+}
+
+.zen-todo-all-group:last-child {
+	margin-bottom: 0;
+}
+
+.zen-todo-all-group-header {
+	display: flex;
+	align-items: center;
+	padding: var(--size-4-1) var(--size-4-2);
+	cursor: pointer;
+	border-radius: var(--radius-s);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.zen-todo-all-group-header:hover {
+	background: var(--background-modifier-hover);
+}
+
+.zen-todo-all-group-title {
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+	color: var(--text-accent);
+}
+
+/* --------------------------------------------------------------------------
+   All view — list selector dropdown
+   -------------------------------------------------------------------------- */
+
+.zen-todo-list-select {
+	flex-shrink: 0;
+	padding: var(--size-4-1) var(--size-4-2);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-size: var(--font-ui-small);
+}

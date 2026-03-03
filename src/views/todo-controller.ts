@@ -15,6 +15,7 @@ import {
   uncompleteTask,
   allSubtasksCompleted,
 } from "../models/task";
+import { ALL_LISTS_PATH } from "../constants";
 
 export interface ZenTodoControllerDeps {
   app: App;
@@ -107,10 +108,14 @@ export class ZenTodoController {
     await this.reconcileListOrder();
 
     if (this.lists.length > 0) {
-      const stillExists = this.lists.some(
-        (l) => l.filePath === this.activeFilePath,
-      );
-      if (!stillExists) this.activeFilePath = this.lists[0].filePath;
+      if (this.activeFilePath === ALL_LISTS_PATH) {
+        // All view — keep as-is
+      } else {
+        const stillExists = this.lists.some(
+          (l) => l.filePath === this.activeFilePath,
+        );
+        if (!stillExists) this.activeFilePath = this.lists[0].filePath;
+      }
     } else {
       this.activeFilePath = null;
     }
@@ -190,8 +195,14 @@ export class ZenTodoController {
   }
 
   private getActiveList(): TodoList | null {
-    if (!this.activeFilePath) return null;
+    if (!this.activeFilePath || this.activeFilePath === ALL_LISTS_PATH) return null;
     return this.lists.find((l) => l.filePath === this.activeFilePath) ?? null;
+  }
+
+  private getMoveTargets(currentFilePath: string): { filePath: string; title: string }[] {
+    return this.lists
+      .filter((l) => l.filePath !== currentFilePath)
+      .map((l) => ({ filePath: l.filePath, title: l.title }));
   }
 
   render(): void {
@@ -213,6 +224,12 @@ export class ZenTodoController {
       (orderedFilePaths) => this.reorderLists(orderedFilePaths),
       (filePath, newName) => this.renameList(filePath, newName),
     );
+
+    // All view
+    if (this.activeFilePath === ALL_LISTS_PATH) {
+      this.renderAllView(el);
+      return;
+    }
 
     const activeList = this.getActiveList();
     if (!activeList) {
@@ -268,8 +285,92 @@ export class ZenTodoController {
         },
         app: this.app,
         sourcePath: activeList.filePath,
+        moveTargets: this.getMoveTargets(activeList.filePath),
       },
     );
+  }
+
+  private renderAllView(el: HTMLElement): void {
+    if (this.lists.length === 0) {
+      const contentDiv = el.createDiv({ cls: "zen-todo-content" });
+      contentDiv.createDiv({
+        cls: "zen-todo-empty",
+        text: "No todo lists found.",
+      });
+      return;
+    }
+
+    // Task input with list selector
+    const inputEl = el.createDiv({ cls: "zen-todo-input-wrapper" });
+    renderTaskInput(
+      inputEl,
+      (text, dueDate, targetFilePath) => {
+        const list = targetFilePath
+          ? this.lists.find((l) => l.filePath === targetFilePath)
+          : this.lists[0];
+        if (list) this.addTask(list, text, dueDate);
+      },
+      this.lists.map((l) => ({ filePath: l.filePath, title: l.title })),
+    );
+    if (this.shouldFocusTaskInput) {
+      this.shouldFocusTaskInput = false;
+      const input = inputEl.querySelector(".zen-todo-text-input") as HTMLInputElement;
+      if (input) setTimeout(() => input.focus(), 0);
+    }
+
+    const contentDiv = el.createDiv({ cls: "zen-todo-content" });
+
+    for (const list of this.lists) {
+      const groupEl = contentDiv.createDiv({ cls: "zen-todo-all-group" });
+
+      // Group header — click to navigate to that list
+      const headerEl = groupEl.createDiv({ cls: "zen-todo-all-group-header" });
+      headerEl.createSpan({
+        cls: "zen-todo-all-group-title",
+        text: list.title,
+      });
+      headerEl.addEventListener("click", () => {
+        this.activeFilePath = list.filePath;
+        this.addingSubtaskFor = null;
+        this.editingNotesFor = null;
+        this.render();
+      });
+
+      const incomplete = list.tasks.filter((t) => !t.completed);
+      const complete = list.tasks.filter((t) => t.completed);
+
+      renderTaskSection(
+        groupEl,
+        incomplete,
+        complete,
+        this.settings.showCompletedByDefault,
+        (event) => this.handleTaskAction(list, event),
+        () => this.archiveAllCompleted(list),
+        {
+          addingSubtaskFor: this.addingSubtaskFor,
+          editingNotesFor: this.editingNotesFor,
+          onSubtaskSubmit: (parentTask, text) =>
+            this.addSubtask(list, parentTask, text),
+          onSubtaskCancel: () => {
+            this.addingSubtaskFor = null;
+            this.render();
+          },
+          onNotesSubmit: (task, notes) => this.saveNotes(list, task, notes),
+          onNotesCancel: () => {
+            this.editingNotesFor = null;
+            this.render();
+          },
+          onReorder: (orderedIds, parentTask) =>
+            this.reorderTasks(list, orderedIds, parentTask),
+          onDragStateChange: (dragging) => {
+            this.isDragging = dragging;
+          },
+          app: this.app,
+          sourcePath: list.filePath,
+          moveTargets: this.getMoveTargets(list.filePath),
+        },
+      );
+    }
   }
 
   private async handleTaskAction(
@@ -305,7 +406,53 @@ export class ZenTodoController {
       case "insert-link":
         this.insertLink(list, event.task);
         break;
+      case "move":
+        if (event.targetFilePath) {
+          await this.moveTask(list, event.task, event.targetFilePath);
+        }
+        break;
     }
+  }
+
+  private async moveTask(
+    sourceList: TodoList,
+    task: TaskItem,
+    targetFilePath: string,
+  ): Promise<void> {
+    const targetList = this.lists.find((l) => l.filePath === targetFilePath);
+    if (!targetList) return;
+
+    // Remove from source
+    sourceList.tasks = sourceList.tasks.filter((t) => t.id !== task.id);
+
+    // Add to target
+    targetList.tasks.push(task);
+
+    // Save both lists
+    this.isSaving = true;
+    try {
+      const sourceFile = this.app.vault.getAbstractFileByPath(sourceList.filePath);
+      const targetFile = this.app.vault.getAbstractFileByPath(targetList.filePath);
+      if (sourceFile instanceof TFile) {
+        const srcContent = serializeToMarkdown(
+          sourceList.title,
+          sourceList.tasks,
+          sourceList.archivedSection,
+        );
+        await this.app.vault.process(sourceFile, () => srcContent);
+      }
+      if (targetFile instanceof TFile) {
+        const tgtContent = serializeToMarkdown(
+          targetList.title,
+          targetList.tasks,
+          targetList.archivedSection,
+        );
+        await this.app.vault.process(targetFile, () => tgtContent);
+      }
+    } finally {
+      this.isSaving = false;
+    }
+    this.render();
   }
 
   private async insertLink(list: TodoList, task: TaskItem): Promise<void> {

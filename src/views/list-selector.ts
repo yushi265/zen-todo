@@ -1,5 +1,6 @@
 import { setIcon, Platform } from "obsidian";
 import { attachTabDrag } from "./tab-drag-handler";
+import { ALL_LISTS_PATH } from "../constants";
 
 // Persists across re-renders for dblclick detection (module-level scope is fine;
 // only one tab bar is active at a time in practice)
@@ -19,6 +20,22 @@ export function renderListSelector(
   container.empty();
 
   const tabsEl = container.createDiv({ cls: "zen-todo-tabs" });
+
+  // "All" tab — fixed, always first
+  const isAllActive = activeFilePath === ALL_LISTS_PATH;
+  const allTab = tabsEl.createEl("button", {
+    cls: `zen-todo-tab zen-todo-tab-all${isAllActive ? " is-active" : ""}`,
+    text: "All",
+    attr: {
+      "aria-label": "Show all lists",
+      role: "tab",
+      "aria-selected": String(isAllActive),
+      "data-file-path": ALL_LISTS_PATH,
+    },
+  });
+  allTab.addEventListener("click", () => {
+    onSelect(ALL_LISTS_PATH);
+  });
 
   for (const list of lists) {
     const isActive = list.filePath === activeFilePath;
