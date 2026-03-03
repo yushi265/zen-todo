@@ -1,4 +1,5 @@
 import { App, TFile, Modal, normalizePath } from "obsidian";
+import { t } from "../i18n";
 import type {
   TodoList,
   TaskItem,
@@ -249,9 +250,9 @@ export class ZenTodoController {
     const activeList = this.getActiveList();
     if (!activeList) {
       const emptyEl = el.createDiv({ cls: "zen-todo-no-list" });
-      emptyEl.createEl("p", { text: "No todo lists found." });
+      emptyEl.createEl("p", { text: t("noLists.message") });
       emptyEl.createEl("p", {
-        text: `Click + to create a list, or add .md files to ${this.settings.todoFolder}/`,
+        text: t("noLists.hint", { folder: this.settings.todoFolder }),
       });
       return;
     }
@@ -306,7 +307,7 @@ export class ZenTodoController {
       const contentDiv = el.createDiv({ cls: "zen-todo-content" });
       contentDiv.createDiv({
         cls: "zen-todo-empty",
-        text: "No todo lists found.",
+        text: t("noLists.message"),
       });
       return;
     }
@@ -475,13 +476,13 @@ export class ZenTodoController {
     const targetList = this.lists.find((l) => l.filePath === targetFilePath);
     if (!targetList) return;
 
-    this.captureUndo("move", `「${task.text}」を移動しました`, [
+    this.captureUndo("move", t("undo.moved", { name: task.text }), [
       sourceList,
       targetList,
     ]);
 
     // Remove from source
-    sourceList.tasks = sourceList.tasks.filter((t) => t.id !== task.id);
+    sourceList.tasks = sourceList.tasks.filter((tsk) => tsk.id !== task.id);
 
     // Add to target
     targetList.tasks.push(task);
@@ -522,13 +523,13 @@ export class ZenTodoController {
     const targetList = this.lists.find((l) => l.filePath === targetFilePath);
     if (!targetList) return;
 
-    this.captureUndo("move", `「${task.text}」を移動しました`, [
+    this.captureUndo("move", t("undo.moved", { name: task.text }), [
       sourceList,
       targetList,
     ]);
 
     // Remove from source
-    sourceList.tasks = sourceList.tasks.filter((t) => t.id !== task.id);
+    sourceList.tasks = sourceList.tasks.filter((tsk) => tsk.id !== task.id);
 
     // Insert into target at dropIndex within same-status group
     const isCompleted = task.completed;
@@ -594,8 +595,8 @@ export class ZenTodoController {
     const confirmed = await new Promise<boolean>((resolve) => {
       const modal = new ConfirmModal(
         this.app,
-        "Remove link",
-        `"${linkTarget}" のリンク先ノートをゴミ箱に移動し、リンクを解除しますか？`,
+        t("modal.removeLink.title"),
+        t("modal.removeLink.message", { name: linkTarget }),
         resolve,
       );
       modal.open();
@@ -637,8 +638,8 @@ export class ZenTodoController {
     parentTask?: TaskItem,
   ): Promise<void> {
     const desc = task.completed
-      ? `「${task.text}」を未完了に戻しました`
-      : `「${task.text}」を完了しました`;
+      ? t("undo.uncompleted", { name: task.text })
+      : t("undo.completed", { name: task.text });
     this.captureUndo("toggle", desc, [list]);
     const updated = task.completed ? uncompleteTask(task) : completeTask(task);
     Object.assign(task, updated);
@@ -663,7 +664,7 @@ export class ZenTodoController {
     task: TaskItem,
     parentTask?: TaskItem,
   ): Promise<void> {
-    this.captureUndo("delete", `「${task.text}」を削除しました`, [list]);
+    this.captureUndo("delete", t("undo.deleted", { name: task.text }), [list]);
     if (parentTask) {
       parentTask.subtasks = parentTask.subtasks.filter((t) => t.id !== task.id);
     } else {
@@ -673,7 +674,7 @@ export class ZenTodoController {
   }
 
   private async archiveTask(list: TodoList, task: TaskItem): Promise<void> {
-    this.captureUndo("archive", `「${task.text}」をアーカイブしました`, [list]);
+    this.captureUndo("archive", t("undo.archived", { name: task.text }), [list]);
     const lines = serializeTaskToLines(task);
     const block = lines.join("\n");
     if (list.archivedSection) {
@@ -690,7 +691,7 @@ export class ZenTodoController {
     if (completed.length === 0) return;
     this.captureUndo(
       "archiveAllCompleted",
-      `${completed.length}件の完了済みタスクをアーカイブしました`,
+      t("undo.archivedAll", { count: completed.length }),
       [list],
     );
     const block = completed.flatMap((t) => serializeTaskToLines(t)).join("\n");
@@ -875,7 +876,7 @@ export class ZenTodoController {
 
     const undoBtn = toast.createEl("button", {
       cls: "zen-todo-undo-btn",
-      text: "元に戻す",
+      text: t("undo.button"),
     });
     undoBtn.addEventListener("click", () => this.performUndo());
   }
@@ -895,20 +896,20 @@ class NewListModal extends Modal {
 
   onOpen(): void {
     const { contentEl } = this;
-    contentEl.createEl("h2", { text: "Create new todo list" });
+    contentEl.createEl("h2", { text: t("modal.newList.title") });
 
     const input = contentEl.createEl("input", {
       type: "text",
       cls: "zen-todo-modal-input",
       attr: {
-        placeholder: "List name...",
-        "aria-label": "List name",
+        placeholder: t("modal.newList.placeholder"),
+        "aria-label": t("modal.newList.ariaLabel"),
       },
     });
 
     const submitBtn = contentEl.createEl("button", {
       cls: "mod-cta",
-      text: "Create",
+      text: t("modal.newList.submit"),
     });
 
     const submit = () => {
@@ -954,12 +955,12 @@ class ConfirmModal extends Modal {
     contentEl.createEl("p", { text: this.message });
 
     const btnContainer = contentEl.createDiv({ cls: "modal-button-container" });
-    btnContainer.createEl("button", { text: "Cancel" }).addEventListener("click", () => {
+    btnContainer.createEl("button", { text: t("modal.removeLink.cancel") }).addEventListener("click", () => {
       this.resolved = true;
       this.resolve(false);
       this.close();
     });
-    const removeBtn = btnContainer.createEl("button", { cls: "mod-warning", text: "Remove" });
+    const removeBtn = btnContainer.createEl("button", { cls: "mod-warning", text: t("modal.removeLink.confirm") });
     removeBtn.addEventListener("click", () => {
       this.resolved = true;
       this.resolve(true);

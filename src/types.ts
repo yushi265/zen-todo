@@ -21,6 +21,7 @@ export interface ZenTodoSettings {
   showCompletedByDefault: boolean;
   autoCompleteParent: boolean;
   listOrder: string[];
+  language: string; // "" = follow Obsidian, "en" | "ja" | ... = override
 }
 
 export type UndoActionType =

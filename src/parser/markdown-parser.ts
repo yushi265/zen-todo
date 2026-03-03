@@ -5,6 +5,7 @@ import {
   CREATED_DATE_EMOJI,
 } from "../constants";
 import { createTaskId } from "../models/task";
+import { t } from "../i18n";
 
 // Note: No lookbehind regex used (iOS < 16.4 incompatibility)
 const CHECKBOX_REGEX = /^(\s*)- \[([ xX])\]\s+(.*)/;
@@ -109,5 +110,5 @@ export function parseMarkdown(content: string): {
     stack.push({ task, indentLevel });
   }
 
-  return { title: title || "Untitled", tasks: rootTasks, archivedSection };
+  return { title: title || t("parser.untitled"), tasks: rootTasks, archivedSection };
 }

@@ -5,6 +5,7 @@ import type { Query } from "../query/query-parser";
 import { describeQuery } from "../query/query-parser";
 import { renderWikiLinkedText } from "./task-item-renderer";
 import { isOverdue, isToday } from "../utils/date-utils";
+import { t } from "../i18n";
 
 export interface QueryViewOptions {
   query: Query;
@@ -31,7 +32,7 @@ export function renderQueryView(
   });
   headerEl.createSpan({
     cls: "zen-todo-query-count",
-    text: ` — ${results.length} task${results.length !== 1 ? "s" : ""}`,
+    text: ` — ${results.length} ${results.length !== 1 ? t("query.tasks") : t("query.task")}`,
   });
 
   // Parse errors
@@ -42,7 +43,7 @@ export function renderQueryView(
   if (results.length === 0) {
     container.createDiv({
       cls: "zen-todo-query-empty",
-      text: "No matching tasks",
+      text: t("query.empty"),
     });
     return;
   }
@@ -89,7 +90,7 @@ function renderQueryTaskItem(
     type: "checkbox",
     cls: "zen-todo-checkbox",
     attr: {
-      "aria-label": task.completed ? "Mark as incomplete" : "Mark as complete",
+      "aria-label": task.completed ? t("task.markIncomplete") : t("task.markComplete"),
     },
   });
   checkbox.checked = task.completed;

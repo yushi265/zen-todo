@@ -1,6 +1,7 @@
 import { setIcon, Platform } from "obsidian";
 import { attachTabDrag } from "./tab-drag-handler";
 import { ALL_LISTS_PATH } from "../constants";
+import { t } from "../i18n";
 
 // Persists across re-renders for dblclick detection (module-level scope is fine;
 // only one tab bar is active at a time in practice)
@@ -25,9 +26,9 @@ export function renderListSelector(
   const isAllActive = activeFilePath === ALL_LISTS_PATH;
   const allTab = tabsEl.createEl("button", {
     cls: `zen-todo-tab zen-todo-tab-all${isAllActive ? " is-active" : ""}`,
-    text: "All",
+    text: t("tabs.all"),
     attr: {
-      "aria-label": "Show all lists",
+      "aria-label": t("tabs.allAriaLabel"),
       role: "tab",
       "aria-selected": String(isAllActive),
       "data-file-path": ALL_LISTS_PATH,
@@ -43,7 +44,7 @@ export function renderListSelector(
       cls: `zen-todo-tab${isActive ? " is-active" : ""}`,
       text: list.title,
       attr: {
-        "aria-label": `Switch to ${list.title}`,
+        "aria-label": t("tabs.switchTo", { name: list.title }),
         role: "tab",
         "aria-selected": String(isActive),
         "data-file-path": list.filePath,
@@ -117,7 +118,7 @@ export function renderListSelector(
     const newBtn = container.createEl("button", {
       cls: "zen-todo-new-list-btn",
       attr: {
-        "aria-label": "Create new list",
+        "aria-label": t("tabs.createNew"),
         "data-tooltip-position": "top",
       },
     });
@@ -139,7 +140,7 @@ function startTabRename(
   input.type = "text";
   input.className = "zen-todo-tab-rename-input";
   input.value = title;
-  input.setAttribute("aria-label", "Rename list");
+  input.setAttribute("aria-label", t("tabs.renameLabel"));
   tabsEl.insertBefore(input, tab);
   tab.style.display = "none";
 

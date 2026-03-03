@@ -3,6 +3,7 @@ import type { TaskItem } from "../types";
 import { isOverdue, isToday, formatRelativeDate } from "../utils/date-utils";
 import { CREATED_DATE_EMOJI } from "../constants";
 import { attachDragHandle } from "./drag-handler";
+import { t } from "../i18n";
 
 export type TaskActionType =
   | "toggle"
@@ -54,7 +55,7 @@ export function renderTaskItem(
     type: "checkbox",
     cls: "zen-todo-checkbox",
     attr: {
-      "aria-label": task.completed ? "Mark as incomplete" : "Mark as complete",
+      "aria-label": task.completed ? t("task.markIncomplete") : t("task.markComplete"),
     },
   });
   checkbox.checked = task.completed;
@@ -70,7 +71,7 @@ export function renderTaskItem(
     attr: {
       tabindex: "0",
       role: "button",
-      "aria-label": "Edit task",
+      "aria-label": t("task.editLabel"),
     },
   });
   if (task.text.includes("[[") && options.app) {
@@ -88,7 +89,7 @@ export function renderTaskItem(
   const editInput = contentArea.createEl("input", {
     type: "text",
     cls: "zen-todo-task-edit-input is-hidden",
-    attr: { "aria-label": "Edit task text" },
+    attr: { "aria-label": t("task.editInputLabel") },
   });
   // リンク済みタスクは中身だけ表示する（[[...]] を剥がす）
   const linkedMatch = task.text.match(/^\[\[([^\]]+)\]\]$/);
@@ -221,7 +222,7 @@ export function renderTaskItem(
   const dateInput = actionsEl.createEl("input", {
     type: "date",
     cls: "zen-todo-inline-date is-hidden",
-    attr: { "aria-label": "Due date" },
+    attr: { "aria-label": t("task.dueDateLabel") },
   });
   if (task.dueDate) dateInput.value = task.dueDate;
 
@@ -243,7 +244,7 @@ export function renderTaskItem(
   const calBtn = actionsEl.createEl("button", {
     cls: "zen-todo-action-btn",
     attr: {
-      "aria-label": "Set due date",
+      "aria-label": t("task.setDueDate"),
       "data-tooltip-position": "top",
     },
   });
@@ -262,7 +263,7 @@ export function renderTaskItem(
   const linkBtn = actionsEl.createEl("button", {
     cls: "zen-todo-action-btn",
     attr: {
-      "aria-label": isLinked ? "Remove link" : "Insert link",
+      "aria-label": isLinked ? t("task.removeLink") : t("task.insertLink"),
       "data-tooltip-position": "top",
     },
   });
@@ -277,7 +278,7 @@ export function renderTaskItem(
     const addSubBtn = actionsEl.createEl("button", {
       cls: "zen-todo-action-btn",
       attr: {
-        "aria-label": "Add subtask",
+        "aria-label": t("task.addSubtask"),
         "data-tooltip-position": "top",
       },
     });
@@ -293,7 +294,7 @@ export function renderTaskItem(
     const moveBtn = actionsEl.createEl("button", {
       cls: "zen-todo-action-btn",
       attr: {
-        "aria-label": "Move to list",
+        "aria-label": t("task.moveToList"),
         "data-tooltip-position": "top",
       },
     });
@@ -320,7 +321,7 @@ export function renderTaskItem(
     const archiveBtn = actionsEl.createEl("button", {
       cls: "zen-todo-action-btn zen-todo-archive-btn",
       attr: {
-        "aria-label": "Archive task",
+        "aria-label": t("task.archive"),
         "data-tooltip-position": "top",
       },
     });
@@ -335,7 +336,7 @@ export function renderTaskItem(
   const delBtn = actionsEl.createEl("button", {
     cls: "zen-todo-action-btn zen-todo-delete-btn",
     attr: {
-      "aria-label": "Delete task",
+      "aria-label": t("task.delete"),
       "data-tooltip-position": "top",
     },
   });
@@ -364,7 +365,7 @@ export function renderTaskItem(
 
       menu.addItem((item) => {
         item
-          .setTitle("Edit")
+          .setTitle(t("menu.edit"))
           .setIcon("pencil")
           .onClick(() => {
             startEditing();
@@ -374,7 +375,7 @@ export function renderTaskItem(
       if (!parentTask) {
         menu.addItem((item) => {
           item
-            .setTitle("Add subtask")
+            .setTitle(t("menu.addSubtask"))
             .setIcon("plus")
             .onClick(() => {
               onAction({ action: "add-subtask", task, parentTask });
@@ -385,7 +386,7 @@ export function renderTaskItem(
       menu.addItem((item) => {
         const mIsLinked = task.text.includes("[[");
         item
-          .setTitle(mIsLinked ? "Remove link" : "Insert link")
+          .setTitle(mIsLinked ? t("menu.removeLink") : t("menu.insertLink"))
           .setIcon(mIsLinked ? "unlink" : "link")
           .onClick(() => {
             onAction({ action: mIsLinked ? "remove-link" : "insert-link", task, parentTask });
@@ -394,7 +395,7 @@ export function renderTaskItem(
 
       menu.addItem((item) => {
         item
-          .setTitle("Set due date")
+          .setTitle(t("menu.setDueDate"))
           .setIcon("calendar")
           .onClick(() => {
             const tmpDate = createEl("input", { type: "date" });
@@ -430,7 +431,7 @@ export function renderTaskItem(
       if (!parentTask && options.moveTargets && options.moveTargets.length > 0) {
         menu.addItem((item) => {
           item
-            .setTitle("Move to...")
+            .setTitle(t("menu.moveTo"))
             .setIcon("arrow-right-from-line")
             .onClick(() => {
               const moveMenu = new Menu();
@@ -453,7 +454,7 @@ export function renderTaskItem(
       if (!parentTask && task.completed) {
         menu.addItem((item) => {
           item
-            .setTitle("Archive")
+            .setTitle(t("menu.archive"))
             .setIcon("archive")
             .onClick(() => {
               onAction({ action: "archive", task, parentTask });
@@ -463,7 +464,7 @@ export function renderTaskItem(
 
       menu.addItem((item) => {
         item
-          .setTitle("Delete")
+          .setTitle(t("menu.delete"))
           .setIcon("trash-2")
           .onClick(() => {
             onAction({ action: "delete", task, parentTask });
@@ -601,8 +602,8 @@ function renderSubtaskInput(
     type: "text",
     cls: "zen-todo-subtask-input",
     attr: {
-      placeholder: "Add a subtask...",
-      "aria-label": "New subtask text",
+      placeholder: t("subtask.placeholder"),
+      "aria-label": t("subtask.ariaLabel"),
     },
   });
 

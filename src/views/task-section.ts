@@ -5,6 +5,7 @@ import {
 	type TaskActionEvent,
 	type RenderTaskOptions,
 } from "./task-item-renderer";
+import { t } from "../i18n";
 
 export function renderTaskSection(
 	container: HTMLElement,
@@ -21,7 +22,7 @@ export function renderTaskSection(
 	if (incomplete.length === 0 && complete.length === 0) {
 		incSection.createDiv({
 			cls: "zen-todo-empty",
-			text: "No tasks yet. Add one above!",
+			text: t("section.empty"),
 		});
 	} else {
 		for (const task of incomplete) {
@@ -39,13 +40,13 @@ export function renderTaskSection(
 		const summary = details.createEl("summary", {
 			cls: "zen-todo-completed-summary",
 		});
-		summary.createSpan({ text: `Completed (${complete.length})` });
+		summary.createSpan({ text: t("section.completed", { count: complete.length }) });
 
 		if (onArchiveAll) {
 			const archiveAllBtn = summary.createEl("button", {
 				cls: "zen-todo-archive-all-btn",
 				attr: {
-					"aria-label": "Archive all completed",
+					"aria-label": t("section.archiveAll"),
 					"data-tooltip-position": "top",
 				},
 			});

@@ -1,3 +1,5 @@
+import { t } from "../i18n";
+
 export type DateFilter =
   | { type: "relative"; period: "today" | "this_week" | "this_month" }
   | { type: "exact"; date: string }
@@ -83,7 +85,7 @@ export function parseQuery(source: string): ParseResult {
     const result = parseLine(line);
     if (result === null) continue;
     if (result === "error") {
-      errors.push(`Unknown filter: "${line.trim()}"`);
+      errors.push(t("query.unknownFilter", { filter: line.trim() }));
     } else {
       filters.push(result);
     }
@@ -95,33 +97,33 @@ export function parseQuery(source: string): ParseResult {
 function describeDateFilter(df: DateFilter): string {
   switch (df.type) {
     case "relative":
-      if (df.period === "today") return "today";
-      if (df.period === "this_week") return "this week";
-      return "this month";
+      if (df.period === "today") return t("query.dateToday");
+      if (df.period === "this_week") return t("query.dateThisWeek");
+      return t("query.dateThisMonth");
     case "exact":
-      return `on ${df.date}`;
+      return t("query.dateOn", { date: df.date });
     case "before":
-      return `before ${df.date}`;
+      return t("query.dateBefore", { date: df.date });
     case "after":
-      return `after ${df.date}`;
+      return t("query.dateAfter", { date: df.date });
   }
 }
 
 export function describeQuery(query: Query): string {
-  if (query.filters.length === 0) return "All tasks";
+  if (query.filters.length === 0) return t("query.allTasks");
   return query.filters
     .map((f) => {
       switch (f.kind) {
         case "completed":
-          return `Completed ${describeDateFilter(f.dateFilter)}`;
+          return t("query.filterCompleted", { when: describeDateFilter(f.dateFilter) });
         case "due":
-          return `Due ${describeDateFilter(f.dateFilter)}`;
+          return t("query.filterDue", { when: describeDateFilter(f.dateFilter) });
         case "overdue":
-          return "Overdue";
+          return t("query.filterOverdue");
         case "incomplete":
-          return "Incomplete";
+          return t("query.filterIncomplete");
         case "list":
-          return `List: ${f.name}`;
+          return t("query.filterList", { name: f.name });
       }
     })
     .join(" · ");

@@ -7,6 +7,7 @@ export const DEFAULT_SETTINGS: ZenTodoSettings = {
   showCompletedByDefault: false,
   autoCompleteParent: true,
   listOrder: [],
+  language: "",
 };
 
 export const ALL_LISTS_PATH = "__all__";

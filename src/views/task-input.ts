@@ -1,3 +1,5 @@
+import { t } from "../i18n";
+
 export function renderTaskInput(
 	container: HTMLElement,
 	onAdd: (text: string, dueDate?: string, targetFilePath?: string) => void,
@@ -10,7 +12,7 @@ export function renderTaskInput(
 	if (lists && lists.length > 0) {
 		listSelect = row.createEl("select", {
 			cls: "zen-todo-list-select",
-			attr: { "aria-label": "Add to list" },
+			attr: { "aria-label": t("input.addToList") },
 		});
 		for (const list of lists) {
 			listSelect.createEl("option", {
@@ -23,19 +25,19 @@ export function renderTaskInput(
 	const textInput = row.createEl("input", {
 		type: "text",
 		cls: "zen-todo-text-input",
-		attr: { placeholder: "Add a task...", "aria-label": "New task text" },
+		attr: { placeholder: t("input.taskPlaceholder"), "aria-label": t("input.taskAriaLabel") },
 	});
 
 	const dateInput = row.createEl("input", {
 		type: "date",
 		cls: "zen-todo-input-date",
-		attr: { "aria-label": "Due date for new task" },
+		attr: { "aria-label": t("input.dueDateLabel") },
 	});
 
 	const addBtn = row.createEl("button", {
 		cls: "zen-todo-add-btn",
-		text: "Add",
-		attr: { "aria-label": "Add task" },
+		text: t("input.addButton"),
+		attr: { "aria-label": t("input.addButtonLabel") },
 	});
 
 	const submit = () => {

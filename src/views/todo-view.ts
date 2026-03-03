@@ -63,4 +63,9 @@ export class ZenTodoView extends ItemView {
 	async createNewList(): Promise<void> {
 		await this.controller?.createNewList();
 	}
+
+	/** Re-render the view immediately (e.g. after a language change). */
+	forceRender(): void {
+		this.controller?.render();
+	}
 }

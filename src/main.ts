@@ -1,9 +1,10 @@
-import { Plugin, WorkspaceLeaf, normalizePath } from "obsidian";
+import { Plugin, WorkspaceLeaf, normalizePath, getLanguage } from "obsidian";
 import type { ZenTodoSettings } from "./types";
 import { DEFAULT_SETTINGS, VIEW_TYPE_ZEN_TODO } from "./constants";
 import { ZenTodoSettingTab } from "./settings";
 import { ZenTodoView } from "./views/todo-view";
 import { ZenTodoCodeBlockChild } from "./views/codeblock-processor";
+import { initLocale, t } from "./i18n";
 
 export default class ZenTodoPlugin extends Plugin {
   settings: ZenTodoSettings;
@@ -11,25 +12,26 @@ export default class ZenTodoPlugin extends Plugin {
 
   async onload(): Promise<void> {
     await this.loadSettings();
+    initLocale(this.settings.language || getLanguage());
 
     this.registerView(
       VIEW_TYPE_ZEN_TODO,
       (leaf) => new ZenTodoView(leaf, this),
     );
 
-    this.addRibbonIcon("check-square", "Open ZenTodo", () => {
+    this.addRibbonIcon("check-square", t("ribbon.openZenTodo"), () => {
       this.activateView();
     });
 
     this.addCommand({
       id: "open-todo-list",
-      name: "Open todo list",
+      name: t("command.openTodoList"),
       callback: () => this.activateView(),
     });
 
     this.addCommand({
       id: "create-new-list",
-      name: "Create new todo list",
+      name: t("command.createNewList"),
       callback: async () => {
         await this.activateView();
         const view = this.getView();
@@ -123,6 +125,17 @@ export default class ZenTodoPlugin extends Plugin {
     if (leaves.length === 0) return null;
     const view = leaves[0].view;
     return view instanceof ZenTodoView ? view : null;
+  }
+
+  refreshAllViews(): void {
+    for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_ZEN_TODO)) {
+      if (leaf.view instanceof ZenTodoView) {
+        leaf.view.forceRender();
+      }
+    }
+    for (const child of this.embeddedControllers) {
+      child.forceRender();
+    }
   }
 
   private notifyViews(filePath: string): void {

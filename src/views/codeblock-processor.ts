@@ -70,6 +70,16 @@ export class ZenTodoCodeBlockChild extends MarkdownRenderChild {
     this.plugin.unregisterEmbeddedController(this);
   }
 
+  /** Re-render immediately (e.g. after a language change). */
+  forceRender(): void {
+    if (this.isQueryMode) {
+      const { query, errors } = parseQuery(this.source);
+      if (query) this.renderQuery(query, errors);
+    } else {
+      this.controller?.render();
+    }
+  }
+
   onExternalChange(_filePath: string): void {
     if (!this.isQueryMode) {
       this.controller?.onExternalChange(_filePath);
