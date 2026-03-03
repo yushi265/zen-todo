@@ -10,6 +10,10 @@ import { renderTaskInput } from "./task-input";
 import { renderTaskSection } from "./task-section";
 import type { TaskActionEvent } from "./task-item-renderer";
 import {
+  attachCrossListDragHandle,
+  type ListGroupInfo,
+} from "./cross-list-drag-handler";
+import {
   createTask,
   completeTask,
   uncompleteTask,
@@ -319,9 +323,12 @@ export class ZenTodoController {
     }
 
     const contentDiv = el.createDiv({ cls: "zen-todo-content" });
+    const groupMeta: { filePath: string; groupEl: HTMLElement; list: TodoList }[] = [];
 
+    // Pass 1: Build DOM for each list group (onReorder suppressed — cross-list handler takes over)
     for (const list of this.lists) {
       const groupEl = contentDiv.createDiv({ cls: "zen-todo-all-group" });
+      groupMeta.push({ filePath: list.filePath, groupEl, list });
 
       // Group header — click to navigate to that list
       const headerEl = groupEl.createDiv({ cls: "zen-todo-all-group-header" });
@@ -360,16 +367,64 @@ export class ZenTodoController {
             this.editingNotesFor = null;
             this.render();
           },
-          onReorder: (orderedIds, parentTask) =>
-            this.reorderTasks(list, orderedIds, parentTask),
-          onDragStateChange: (dragging) => {
-            this.isDragging = dragging;
-          },
+          // onReorder intentionally omitted — cross-list handler manages drag
           app: this.app,
           sourcePath: list.filePath,
           moveTargets: this.getMoveTargets(list.filePath),
         },
       );
+    }
+
+    // Pass 2: Attach cross-list drag handles to root task items
+    const listGroups: ListGroupInfo[] = groupMeta.map(({ filePath, groupEl }) => ({
+      filePath,
+      groupEl,
+    }));
+
+    for (const { filePath, groupEl } of groupMeta) {
+      const incSection = groupEl.querySelector(".zen-todo-incomplete-section") as HTMLElement | null;
+      const cmpSection = groupEl.querySelector(".zen-todo-completed-section") as HTMLElement | null;
+
+      const rootTaskItems: HTMLElement[] = [];
+      if (incSection) {
+        rootTaskItems.push(
+          ...(Array.from(incSection.querySelectorAll(":scope > .zen-todo-task-item")) as HTMLElement[]),
+        );
+      }
+      if (cmpSection) {
+        rootTaskItems.push(
+          ...(Array.from(cmpSection.querySelectorAll(":scope > .zen-todo-task-item")) as HTMLElement[]),
+        );
+      }
+
+      for (const taskItemEl of rootTaskItems) {
+        const taskRowEl = taskItemEl.querySelector(".zen-todo-task-row") as HTMLElement | null;
+        if (!taskRowEl) continue;
+
+        attachCrossListDragHandle(
+          taskItemEl,
+          taskRowEl,
+          filePath,
+          contentDiv,
+          listGroups,
+          {
+            onReorder: (orderedIds, sourceFilePath) => {
+              const sourceList = this.lists.find((l) => l.filePath === sourceFilePath);
+              if (sourceList) this.reorderTasks(sourceList, orderedIds);
+            },
+            onMove: (taskId, sourceFilePath, targetFilePath, dropIndex) => {
+              const sourceList = this.lists.find((l) => l.filePath === sourceFilePath);
+              const task = sourceList?.tasks.find((t) => t.id === taskId);
+              if (sourceList && task) {
+                this.moveTaskAtIndex(sourceList, task, targetFilePath, dropIndex);
+              }
+            },
+            onDragStateChange: (dragging) => {
+              this.isDragging = dragging;
+            },
+          },
+        );
+      }
     }
   }
 
@@ -430,6 +485,59 @@ export class ZenTodoController {
 
     // Add to target
     targetList.tasks.push(task);
+
+    // Save both lists
+    this.isSaving = true;
+    try {
+      const sourceFile = this.app.vault.getAbstractFileByPath(sourceList.filePath);
+      const targetFile = this.app.vault.getAbstractFileByPath(targetList.filePath);
+      if (sourceFile instanceof TFile) {
+        const srcContent = serializeToMarkdown(
+          sourceList.title,
+          sourceList.tasks,
+          sourceList.archivedSection,
+        );
+        await this.app.vault.process(sourceFile, () => srcContent);
+      }
+      if (targetFile instanceof TFile) {
+        const tgtContent = serializeToMarkdown(
+          targetList.title,
+          targetList.tasks,
+          targetList.archivedSection,
+        );
+        await this.app.vault.process(targetFile, () => tgtContent);
+      }
+    } finally {
+      this.isSaving = false;
+    }
+    this.render();
+  }
+
+  private async moveTaskAtIndex(
+    sourceList: TodoList,
+    task: TaskItem,
+    targetFilePath: string,
+    dropIndex: number,
+  ): Promise<void> {
+    const targetList = this.lists.find((l) => l.filePath === targetFilePath);
+    if (!targetList) return;
+
+    // Remove from source
+    sourceList.tasks = sourceList.tasks.filter((t) => t.id !== task.id);
+
+    // Insert into target at dropIndex within same-status group
+    const isCompleted = task.completed;
+    const incomplete = targetList.tasks.filter((t) => !t.completed);
+    const completed = targetList.tasks.filter((t) => t.completed);
+
+    if (isCompleted) {
+      const clampedIndex = Math.min(dropIndex, completed.length);
+      completed.splice(clampedIndex, 0, task);
+    } else {
+      const clampedIndex = Math.min(dropIndex, incomplete.length);
+      incomplete.splice(clampedIndex, 0, task);
+    }
+    targetList.tasks = [...incomplete, ...completed];
 
     // Save both lists
     this.isSaving = true;
