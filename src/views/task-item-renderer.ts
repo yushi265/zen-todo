@@ -11,7 +11,6 @@ export type TaskActionType =
   | "add-subtask"
   | "set-due"
   | "archive"
-  | "edit-notes"
   | "insert-link"
   | "remove-link"
   | "move";
@@ -26,11 +25,8 @@ export interface TaskActionEvent {
 
 export interface RenderTaskOptions {
   addingSubtaskFor?: string | null;
-  editingNotesFor?: string | null;
   onSubtaskSubmit?: (parentTask: TaskItem, text: string) => void;
   onSubtaskCancel?: () => void;
-  onNotesSubmit?: (task: TaskItem, notes: string) => void;
-  onNotesCancel?: () => void;
   onReorder?: (orderedIds: string[], parentTask?: TaskItem) => void;
   onDragStateChange?: (dragging: boolean) => void;
   app?: App;
@@ -218,22 +214,6 @@ export function renderTaskItem(
     });
   }
 
-  // Notes indicator (desktop only, always visible when notes exist)
-  if (task.notes && !Platform.isMobile) {
-    const notesIndicator = rowEl.createEl("button", {
-      cls: "zen-todo-notes-indicator",
-      attr: {
-        "aria-label": "Edit notes",
-        "data-tooltip-position": "top",
-      },
-    });
-    setIcon(notesIndicator, "message-square");
-    notesIndicator.addEventListener("click", (e) => {
-      e.stopPropagation();
-      onAction({ action: "edit-notes", task, parentTask });
-    });
-  }
-
   // Actions area
   const actionsEl = rowEl.createDiv({ cls: "zen-todo-task-actions" });
 
@@ -275,20 +255,6 @@ export function renderTaskItem(
     (
       dateInput as HTMLInputElement & { showPicker?: () => void }
     ).showPicker?.();
-  });
-
-  // Notes button
-  const notesBtn = actionsEl.createEl("button", {
-    cls: "zen-todo-action-btn",
-    attr: {
-      "aria-label": "Edit notes",
-      "data-tooltip-position": "top",
-    },
-  });
-  setIcon(notesBtn, "message-square");
-  notesBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    onAction({ action: "edit-notes", task, parentTask });
   });
 
   // Link button (toggles based on link state)
@@ -417,15 +383,6 @@ export function renderTaskItem(
       }
 
       menu.addItem((item) => {
-        item
-          .setTitle("Edit notes")
-          .setIcon("message-square")
-          .onClick(() => {
-            onAction({ action: "edit-notes", task, parentTask });
-          });
-      });
-
-      menu.addItem((item) => {
         const mIsLinked = task.text.includes("[[");
         item
           .setTitle(mIsLinked ? "Remove link" : "Insert link")
@@ -516,74 +473,6 @@ export function renderTaskItem(
       const touch = e.touches[0];
       menu.showAtPosition({ x: touch.clientX, y: touch.clientY });
     });
-  }
-
-  // Notes display (when not editing)
-  if (task.notes && options.editingNotesFor !== task.id) {
-    itemEl.createDiv({ cls: "zen-todo-task-notes", text: task.notes });
-  }
-
-  // Notes textarea (when editing)
-  if (options.editingNotesFor === task.id) {
-    const notesTextarea = itemEl.createEl("textarea", {
-      cls: "zen-todo-notes-textarea",
-      attr: { "aria-label": "Task notes" },
-    });
-    notesTextarea.value = task.notes ?? "";
-
-    let notesDone = false;
-
-    const commitNotes = () => {
-      if (notesDone) return;
-      notesDone = true;
-      options.onNotesSubmit?.(task, notesTextarea.value);
-    };
-
-    const cancelNotes = () => {
-      if (notesDone) return;
-      notesDone = true;
-      options.onNotesCancel?.();
-    };
-
-    notesTextarea.addEventListener(
-      "keydown",
-      (e: KeyboardEvent) => {
-        if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !e.isComposing) {
-          e.preventDefault();
-          e.stopPropagation();
-          commitNotes();
-        } else if (e.key === "Escape") {
-          e.preventDefault();
-          cancelNotes();
-        }
-      },
-      true,
-    ); // capture phase: intercept before Obsidian global hotkeys
-
-    const actionsEl = itemEl.createDiv({ cls: "zen-todo-notes-actions" });
-    const saveBtn = actionsEl.createEl("button", {
-      cls: "zen-todo-notes-save-btn",
-      attr: { type: "button", "aria-label": "Save notes (Cmd+Enter)" },
-    });
-    setIcon(saveBtn, "check");
-    saveBtn.createSpan({ text: "保存" });
-    saveBtn.addEventListener("click", () => {
-      commitNotes();
-    });
-
-    notesTextarea.addEventListener("blur", () => {
-      setTimeout(() => {
-        if (notesTextarea.isConnected) commitNotes();
-      }, 150);
-    });
-
-    setTimeout(() => {
-      notesTextarea.focus();
-      notesTextarea.setSelectionRange(
-        notesTextarea.value.length,
-        notesTextarea.value.length,
-      );
-    }, 0);
   }
 
   // Subtasks container

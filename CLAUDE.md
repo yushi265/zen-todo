@@ -68,7 +68,6 @@ Both contexts call `controller.initialize()` and `controller.onExternalChange()`
 | `lists` | `TodoList[]` | All loaded todo lists |
 | `activeFilePath` | `string \| null` | Currently selected list |
 | `addingSubtaskFor` | `string \| null` | Task ID receiving a new subtask |
-| `editingNotesFor` | `string \| null` | Task ID whose notes textarea is open |
 | `isSaving` | `boolean` | Lock to prevent concurrent writes |
 | `isDragging` | `boolean` | True while a drag is in progress (suppresses external-change refresh) |
 | `refreshTimer` | `NodeJS.Timeout \| null` | Debounce handle for external changes |
@@ -111,7 +110,6 @@ Registering a `zen-todo` fenced code block in any note renders a full ZenTodo pa
 # List Title
 
 - [ ] Incomplete task 📅 2026-03-01
-	Note text for this task (indented, non-checkbox line)
 	- [x] Completed subtask ✅ 2026-02-20
 - [x] Completed task ✅ 2026-02-22
 
@@ -123,7 +121,6 @@ Registering a `zen-todo` fenced code block in any note renders a full ZenTodo pa
 - **Tab indentation** for subtask nesting (never spaces)
 - `📅 YYYY-MM-DD` — due date marker (defined in `constants.ts`)
 - `✅ YYYY-MM-DD` — completion date marker
-- **Notes**: indented non-checkbox lines immediately below a task are parsed into `TaskItem.notes`; serialized one indent level deeper than the task
 - **Archived section**: `## Archived` heading at the end of the file stores archived tasks as raw Markdown; parsed into `TodoList.archivedSection` and preserved verbatim on every save
 - Serializer always orders: incomplete tasks first, completed tasks last (both at root and subtask levels)
 - Parser uses a **stack-based algorithm** and avoids lookbehind regex for iOS < 16.4 compatibility
@@ -167,7 +164,7 @@ To test locally, symlink or copy these three files into your vault:
 
 - `ZenTodoController` re-renders the entire container on every state change (simple full re-render strategy)
 - Event listeners are attached after DOM construction — no persistent references stored outside the closure
-- Inline edit state is managed by `addingSubtaskFor` / `editingNotesFor` in the controller; only one input is open at a time
+- Inline edit state is managed by `addingSubtaskFor` in the controller; only one input is open at a time
 
 ## Settings
 

@@ -5,7 +5,6 @@ export interface TaskItem {
   createdDate?: string; // YYYY-MM-DD
   dueDate?: string; // YYYY-MM-DD
   doneDate?: string; // YYYY-MM-DD
-  notes?: string;
   subtasks: TaskItem[];
   indentLevel: number;
 }

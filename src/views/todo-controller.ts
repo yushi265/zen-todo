@@ -37,7 +37,6 @@ export class ZenTodoController {
   activeFilePath: string | null = null;
   private lists: TodoList[] = [];
   private addingSubtaskFor: string | null = null;
-  private editingNotesFor: string | null = null;
   isSaving = false;
   private isDragging = false;
   private refreshTimer: ReturnType<typeof setTimeout> | null = null;
@@ -221,7 +220,6 @@ export class ZenTodoController {
       (fp) => {
         this.activeFilePath = fp;
         this.addingSubtaskFor = null;
-        this.editingNotesFor = null;
         this.render();
       },
       this.onCreateNew,
@@ -270,16 +268,10 @@ export class ZenTodoController {
       () => this.archiveAllCompleted(activeList),
       {
         addingSubtaskFor: this.addingSubtaskFor,
-        editingNotesFor: this.editingNotesFor,
         onSubtaskSubmit: (parentTask, text) =>
           this.addSubtask(activeList, parentTask, text),
         onSubtaskCancel: () => {
           this.addingSubtaskFor = null;
-          this.render();
-        },
-        onNotesSubmit: (task, notes) => this.saveNotes(activeList, task, notes),
-        onNotesCancel: () => {
-          this.editingNotesFor = null;
           this.render();
         },
         onReorder: (orderedIds, parentTask) =>
@@ -339,7 +331,6 @@ export class ZenTodoController {
       headerEl.addEventListener("click", () => {
         this.activeFilePath = list.filePath;
         this.addingSubtaskFor = null;
-        this.editingNotesFor = null;
         this.render();
       });
 
@@ -355,16 +346,10 @@ export class ZenTodoController {
         () => this.archiveAllCompleted(list),
         {
           addingSubtaskFor: this.addingSubtaskFor,
-          editingNotesFor: this.editingNotesFor,
           onSubtaskSubmit: (parentTask, text) =>
             this.addSubtask(list, parentTask, text),
           onSubtaskCancel: () => {
             this.addingSubtaskFor = null;
-            this.render();
-          },
-          onNotesSubmit: (task, notes) => this.saveNotes(list, task, notes),
-          onNotesCancel: () => {
-            this.editingNotesFor = null;
             this.render();
           },
           // onReorder intentionally omitted — cross-list handler manages drag
@@ -453,10 +438,6 @@ export class ZenTodoController {
         break;
       case "archive":
         await this.archiveTask(list, event.task);
-        break;
-      case "edit-notes":
-        this.editingNotesFor = event.task.id;
-        this.render();
         break;
       case "insert-link":
         this.insertLink(list, event.task);
@@ -713,16 +694,6 @@ export class ZenTodoController {
     }
 
     task.text = newText;
-    await this.saveList(list);
-  }
-
-  private async saveNotes(
-    list: TodoList,
-    task: TaskItem,
-    notes: string,
-  ): Promise<void> {
-    task.notes = notes.trim() || undefined;
-    this.editingNotesFor = null;
     await this.saveList(list);
   }
 
