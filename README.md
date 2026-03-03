@@ -16,6 +16,7 @@ A minimalist todo manager for [Obsidian](https://obsidian.md) that stores tasks 
 - **Tab Drag & Drop** — Drag list tabs to reorder them; order is persisted across sessions
 - **Archive** — Move completed tasks to a preserved `## Archived` section at the bottom of the file
 - **Inline Embedded View** — Embed a full ZenTodo panel in any note using a `zen-todo` fenced code block
+- **Query View** — Filter tasks by completion date, due date, or list name using simple query syntax in code blocks
 
 ## Screenshot
 
@@ -81,6 +82,16 @@ Embed ZenTodo in any note using a fenced code block:
 ````
 
 This renders a full ZenTodo panel inline — the same lists and actions available in the sidebar panel.
+
+You can also write query filters in the code block to display filtered results across all lists:
+
+````markdown
+```zen-todo
+completed today
+```
+````
+
+See [docs/query.md](docs/query.md) for the full filter reference.
 
 ## Markdown Format
 

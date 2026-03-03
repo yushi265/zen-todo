@@ -24,18 +24,22 @@ src/
 ├── parser/
 │   ├── markdown-parser.ts     # parseMarkdown(): Markdown string → { title, tasks, archivedSection }
 │   └── markdown-serializer.ts # serializeToMarkdown(): TodoList → Markdown string; serializeTaskToLines(): single task → lines
+├── query/
+│   ├── query-parser.ts        # parseQuery(): source → Query object; describeQuery(): Query → display string
+│   └── query-engine.ts        # executeQuery(): Query + TodoList[] → filtered QueryResultItem[]
 ├── utils/
 │   └── date-utils.ts          # formatDate, today, isOverdue, isToday
 └── views/
     ├── todo-view.ts           # ZenTodoView (ItemView): thin wrapper that hosts a ZenTodoController
     ├── todo-controller.ts     # ZenTodoController: state + action dispatch (shared by view and code block)
-    ├── codeblock-processor.ts # ZenTodoCodeBlockChild (MarkdownRenderChild): inline embedded view
+    ├── codeblock-processor.ts # ZenTodoCodeBlockChild (MarkdownRenderChild): inline embedded view; calls parseQuery() to branch between full panel and query mode
     ├── list-selector.ts       # renderListSelector(): tab bar
     ├── task-input.ts          # renderTaskInput(): new task row
     ├── task-section.ts        # renderTaskSection(): incomplete / completed groups
     ├── task-item-renderer.ts  # renderTaskItem(): single row + inline edit
     ├── drag-handler.ts        # attachDragHandle(): pointer-based task drag & drop reorder
-    └── tab-drag-handler.ts    # attachTabDrag(): pointer-based list-tab drag & drop reorder
+    ├── tab-drag-handler.ts    # attachTabDrag(): pointer-based list-tab drag & drop reorder
+    └── query-view-renderer.ts # renderQueryView(): query result DOM (grouped by list, checkbox toggle)
 ```
 
 ### Data Flow
@@ -102,7 +106,10 @@ Registering a `zen-todo` fenced code block in any note renders a full ZenTodo pa
 
 - `ZenTodoCodeBlockChild` extends `MarkdownRenderChild` and manages its own `ZenTodoController` instance
 - The plugin registers embedded controllers in `embeddedControllers` set so they receive `onExternalChange` notifications alongside the sidebar view
-- The code block content (source) is currently ignored; all lists in the configured folder are loaded
+- The code block source is passed to `parseQuery()` to determine the rendering mode:
+  - **Empty source** → full interactive panel (existing behavior; all lists loaded via `ZenTodoController`)
+  - **Non-empty source** → query mode; `renderQueryView()` renders filtered results with checkbox-only interaction
+- In query mode, checkbox toggles call `ZenTodoController.handleTaskAction()` directly to persist changes to the source `.md` file
 
 ## Markdown Format
 
