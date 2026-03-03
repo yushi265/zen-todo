@@ -22,3 +22,23 @@ export interface ZenTodoSettings {
   autoCompleteParent: boolean;
   listOrder: string[];
 }
+
+export type UndoActionType =
+  | "delete"
+  | "archive"
+  | "archiveAllCompleted"
+  | "toggle"
+  | "move";
+
+export interface ListSnapshot {
+  filePath: string;
+  tasks: TaskItem[];
+  archivedSection?: string;
+}
+
+export interface UndoState {
+  actionType: UndoActionType;
+  description: string;
+  snapshots: ListSnapshot[];
+  timestamp: number;
+}

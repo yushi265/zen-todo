@@ -1,5 +1,12 @@
 import { App, TFile, Modal, normalizePath } from "obsidian";
-import type { TodoList, TaskItem, ZenTodoSettings } from "../types";
+import type {
+  TodoList,
+  TaskItem,
+  ZenTodoSettings,
+  UndoState,
+  ListSnapshot,
+  UndoActionType,
+} from "../types";
 import { parseMarkdown } from "../parser/markdown-parser";
 import {
   serializeToMarkdown,
@@ -18,6 +25,7 @@ import {
   completeTask,
   uncompleteTask,
   allSubtasksCompleted,
+  cloneTasks,
 } from "../models/task";
 import { ALL_LISTS_PATH } from "../constants";
 
@@ -41,6 +49,8 @@ export class ZenTodoController {
   private isDragging = false;
   private refreshTimer: ReturnType<typeof setTimeout> | null = null;
   private shouldFocusTaskInput = false;
+  private undoState: UndoState | null = null;
+  private undoTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     deps: ZenTodoControllerDeps,
@@ -61,11 +71,13 @@ export class ZenTodoController {
 
   destroy(): void {
     if (this.refreshTimer) clearTimeout(this.refreshTimer);
+    this.clearUndo();
   }
 
   /** Called when a todo file changes externally. */
   onExternalChange(_filePath: string): void {
     if (this.isSaving || this.isDragging) return;
+    this.clearUndo();
     if (this.refreshTimer) clearTimeout(this.refreshTimer);
     this.refreshTimer = setTimeout(async () => {
       await this.loadLists();
@@ -230,6 +242,7 @@ export class ZenTodoController {
     // All view
     if (this.activeFilePath === ALL_LISTS_PATH) {
       this.renderAllView(el);
+      this.renderUndoToast(el);
       return;
     }
 
@@ -284,6 +297,8 @@ export class ZenTodoController {
         moveTargets: this.getMoveTargets(activeList.filePath),
       },
     );
+
+    this.renderUndoToast(el);
   }
 
   private renderAllView(el: HTMLElement): void {
@@ -460,6 +475,11 @@ export class ZenTodoController {
     const targetList = this.lists.find((l) => l.filePath === targetFilePath);
     if (!targetList) return;
 
+    this.captureUndo("move", `「${task.text}」を移動しました`, [
+      sourceList,
+      targetList,
+    ]);
+
     // Remove from source
     sourceList.tasks = sourceList.tasks.filter((t) => t.id !== task.id);
 
@@ -501,6 +521,11 @@ export class ZenTodoController {
   ): Promise<void> {
     const targetList = this.lists.find((l) => l.filePath === targetFilePath);
     if (!targetList) return;
+
+    this.captureUndo("move", `「${task.text}」を移動しました`, [
+      sourceList,
+      targetList,
+    ]);
 
     // Remove from source
     sourceList.tasks = sourceList.tasks.filter((t) => t.id !== task.id);
@@ -611,6 +636,10 @@ export class ZenTodoController {
     task: TaskItem,
     parentTask?: TaskItem,
   ): Promise<void> {
+    const desc = task.completed
+      ? `「${task.text}」を未完了に戻しました`
+      : `「${task.text}」を完了しました`;
+    this.captureUndo("toggle", desc, [list]);
     const updated = task.completed ? uncompleteTask(task) : completeTask(task);
     Object.assign(task, updated);
 
@@ -634,6 +663,7 @@ export class ZenTodoController {
     task: TaskItem,
     parentTask?: TaskItem,
   ): Promise<void> {
+    this.captureUndo("delete", `「${task.text}」を削除しました`, [list]);
     if (parentTask) {
       parentTask.subtasks = parentTask.subtasks.filter((t) => t.id !== task.id);
     } else {
@@ -643,6 +673,7 @@ export class ZenTodoController {
   }
 
   private async archiveTask(list: TodoList, task: TaskItem): Promise<void> {
+    this.captureUndo("archive", `「${task.text}」をアーカイブしました`, [list]);
     const lines = serializeTaskToLines(task);
     const block = lines.join("\n");
     if (list.archivedSection) {
@@ -657,6 +688,11 @@ export class ZenTodoController {
   private async archiveAllCompleted(list: TodoList): Promise<void> {
     const completed = list.tasks.filter((t) => t.completed);
     if (completed.length === 0) return;
+    this.captureUndo(
+      "archiveAllCompleted",
+      `${completed.length}件の完了済みタスクをアーカイブしました`,
+      [list],
+    );
     const block = completed.flatMap((t) => serializeTaskToLines(t)).join("\n");
     if (list.archivedSection) {
       list.archivedSection = list.archivedSection + "\n" + block;
@@ -752,6 +788,96 @@ export class ZenTodoController {
       this.isSaving = false;
     }
     this.render();
+  }
+
+  // ------------------------------------------------------------------ //
+  // Undo toast
+  // ------------------------------------------------------------------ //
+
+  private captureUndo(
+    actionType: UndoActionType,
+    description: string,
+    listsToSnapshot: TodoList[],
+  ): void {
+    if (this.undoTimer) {
+      clearTimeout(this.undoTimer);
+      this.undoTimer = null;
+    }
+
+    const snapshots: ListSnapshot[] = listsToSnapshot.map((list) => ({
+      filePath: list.filePath,
+      tasks: cloneTasks(list.tasks),
+      archivedSection: list.archivedSection,
+    }));
+
+    this.undoState = {
+      actionType,
+      description,
+      snapshots,
+      timestamp: Date.now(),
+    };
+
+    this.undoTimer = setTimeout(() => {
+      this.undoState = null;
+      this.undoTimer = null;
+      this.render();
+    }, 5000);
+  }
+
+  private clearUndo(): void {
+    if (this.undoTimer) {
+      clearTimeout(this.undoTimer);
+      this.undoTimer = null;
+    }
+    this.undoState = null;
+  }
+
+  private async performUndo(): Promise<void> {
+    if (!this.undoState) return;
+
+    const { snapshots } = this.undoState;
+    this.clearUndo();
+
+    this.isSaving = true;
+    try {
+      for (const snapshot of snapshots) {
+        const list = this.lists.find((l) => l.filePath === snapshot.filePath);
+        if (!list) continue;
+
+        list.tasks = snapshot.tasks;
+        list.archivedSection = snapshot.archivedSection;
+
+        const abstract = this.app.vault.getAbstractFileByPath(list.filePath);
+        if (abstract instanceof TFile) {
+          const content = serializeToMarkdown(
+            list.title,
+            list.tasks,
+            list.archivedSection,
+          );
+          await this.app.vault.process(abstract, () => content);
+        }
+      }
+    } finally {
+      this.isSaving = false;
+    }
+
+    this.render();
+  }
+
+  private renderUndoToast(el: HTMLElement): void {
+    if (!this.undoState) return;
+
+    const toast = el.createDiv({ cls: "zen-todo-undo-toast" });
+    toast.createSpan({
+      cls: "zen-todo-undo-message",
+      text: this.undoState.description,
+    });
+
+    const undoBtn = toast.createEl("button", {
+      cls: "zen-todo-undo-btn",
+      text: "元に戻す",
+    });
+    undoBtn.addEventListener("click", () => this.performUndo());
   }
 }
 

@@ -54,3 +54,20 @@ export function allSubtasksCompleted(task: TaskItem): boolean {
   if (task.subtasks.length === 0) return false;
   return task.subtasks.every((st) => st.completed);
 }
+
+export function cloneTask(task: TaskItem): TaskItem {
+  return {
+    id: task.id,
+    text: task.text,
+    completed: task.completed,
+    createdDate: task.createdDate,
+    dueDate: task.dueDate,
+    doneDate: task.doneDate,
+    subtasks: task.subtasks.map(cloneTask),
+    indentLevel: task.indentLevel,
+  };
+}
+
+export function cloneTasks(tasks: TaskItem[]): TaskItem[] {
+  return tasks.map(cloneTask);
+}
