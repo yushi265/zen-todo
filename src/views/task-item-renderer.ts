@@ -214,6 +214,22 @@ export function renderTaskItem(
     });
   }
 
+  // Notes indicator (desktop only, always visible when notes exist)
+  if (task.notes && !Platform.isMobile) {
+    const notesIndicator = rowEl.createEl("button", {
+      cls: "zen-todo-notes-indicator",
+      attr: {
+        "aria-label": "Edit notes",
+        "data-tooltip-position": "top",
+      },
+    });
+    setIcon(notesIndicator, "message-square");
+    notesIndicator.addEventListener("click", (e) => {
+      e.stopPropagation();
+      onAction({ action: "edit-notes", task, parentTask });
+    });
+  }
+
   // Actions area
   const actionsEl = rowEl.createDiv({ cls: "zen-todo-task-actions" });
 
@@ -259,7 +275,7 @@ export function renderTaskItem(
 
   // Notes button
   const notesBtn = actionsEl.createEl("button", {
-    cls: `zen-todo-action-btn${task.notes ? " has-notes" : ""}`,
+    cls: "zen-todo-action-btn",
     attr: {
       "aria-label": "Edit notes",
       "data-tooltip-position": "top",
