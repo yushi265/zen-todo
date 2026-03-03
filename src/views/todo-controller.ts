@@ -335,15 +335,14 @@ export class ZenTodoController {
       });
 
       const incomplete = list.tasks.filter((t) => !t.completed);
-      const complete = list.tasks.filter((t) => t.completed);
 
       renderTaskSection(
         groupEl,
         incomplete,
-        complete,
-        this.settings.showCompletedByDefault,
+        [],                // Allタブでは完了タスクを非表示
+        false,
         (event) => this.handleTaskAction(list, event),
-        () => this.archiveAllCompleted(list),
+        undefined,         // アーカイブボタンも不要
         {
           addingSubtaskFor: this.addingSubtaskFor,
           onSubtaskSubmit: (parentTask, text) =>
