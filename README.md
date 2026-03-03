@@ -2,6 +2,8 @@
 
 A minimalist todo manager for [Obsidian](https://obsidian.md) that stores tasks as plain Markdown — fully compatible with the [Tasks plugin](https://github.com/obsidian-tasks-group/obsidian-tasks) format.
 
+**[Documentation](https://yushi265.github.io/zen-todo/)** | **[日本語ドキュメント](https://yushi265.github.io/zen-todo/ja/)**
+
 ## Features
 
 - **Multiple Lists** — Create and switch between separate todo list files
@@ -91,7 +93,7 @@ completed today
 ```
 ````
 
-See [docs/query.md](docs/query.md) for the full filter reference.
+See the [Query View documentation](https://yushi265.github.io/zen-todo/guide/query-view) for the full filter reference.
 
 ## Markdown Format
 
