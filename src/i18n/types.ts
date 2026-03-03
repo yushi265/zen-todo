@@ -120,4 +120,7 @@ export interface TranslationKeys {
 
   // parser/markdown-parser.ts
   "parser.untitled": string;
+
+  // todo-controller.ts — description
+  "description.addPlaceholder": string;
 }

@@ -12,6 +12,7 @@ export interface TaskItem {
 export interface TodoList {
   filePath: string;
   title: string;
+  description?: string;
   tasks: TaskItem[];
   archivedSection?: string;
 }

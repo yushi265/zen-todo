@@ -9,8 +9,12 @@ export function serializeToMarkdown(
   title: string,
   tasks: TaskItem[],
   archivedSection?: string,
+  description?: string,
 ): string {
   const lines: string[] = [`# ${title}`, ""];
+  if (description) {
+    lines.push(description, "");
+  }
 
   // Incomplete tasks first, then completed
   const incomplete = tasks.filter((t) => !t.completed);

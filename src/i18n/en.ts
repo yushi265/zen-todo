@@ -123,4 +123,7 @@ export const en: TranslationKeys = {
 
   // parser/markdown-parser.ts
   "parser.untitled": "Untitled",
+
+  // todo-controller.ts — description
+  "description.addPlaceholder": "Add description...",
 };

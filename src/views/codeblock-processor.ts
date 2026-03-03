@@ -107,8 +107,8 @@ export class ZenTodoCodeBlockChild extends MarkdownRenderChild {
     this.lists = await Promise.all(
       files.map(async (file) => {
         const content = await this.plugin.app.vault.read(file);
-        const { title, tasks, archivedSection } = parseMarkdown(content);
-        return { filePath: file.path, title, tasks, archivedSection };
+        const { title, description, tasks, archivedSection } = parseMarkdown(content);
+        return { filePath: file.path, title, description, tasks, archivedSection };
       }),
     );
   }
@@ -141,7 +141,7 @@ export class ZenTodoCodeBlockChild extends MarkdownRenderChild {
     const abstract = this.plugin.app.vault.getAbstractFileByPath(listFilePath);
     if (!(abstract instanceof TFile)) return;
 
-    const content = serializeToMarkdown(list.title, list.tasks, list.archivedSection);
+    const content = serializeToMarkdown(list.title, list.tasks, list.archivedSection, list.description);
     this.isSaving = true;
     try {
       await this.plugin.app.vault.process(abstract, () => content);

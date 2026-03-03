@@ -12,6 +12,7 @@ const CHECKBOX_REGEX = /^(\s*)- \[([ xX])\]\s+(.*)/;
 
 export function parseMarkdown(content: string): {
   title: string;
+  description?: string;
   tasks: TaskItem[];
   archivedSection?: string;
 } {
@@ -50,6 +51,8 @@ export function parseMarkdown(content: string): {
 
   const lines = mainContent.split("\n");
   let title = "";
+  const descriptionLines: string[] = [];
+  let firstTaskFound = false;
   const rootTasks: TaskItem[] = [];
   // Stack tracks parent tasks by indent level
   const stack: { task: TaskItem; indentLevel: number }[] = [];
@@ -63,8 +66,14 @@ export function parseMarkdown(content: string): {
 
     const match = CHECKBOX_REGEX.exec(line);
     if (!match) {
+      // Accumulate description lines between title and first task
+      if (title && !firstTaskFound) {
+        descriptionLines.push(line);
+      }
       continue;
     }
+
+    firstTaskFound = true;
 
     const [, indent, checkChar, rest] = match;
     const indentLevel = indent.length;
@@ -110,5 +119,6 @@ export function parseMarkdown(content: string): {
     stack.push({ task, indentLevel });
   }
 
-  return { title: title || t("parser.untitled"), tasks: rootTasks, archivedSection };
+  const description = descriptionLines.join("\n").trim() || undefined;
+  return { title: title || t("parser.untitled"), description, tasks: rootTasks, archivedSection };
 }

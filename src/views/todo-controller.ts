@@ -115,8 +115,8 @@ export class ZenTodoController {
     this.lists = await Promise.all(
       files.map(async (file) => {
         const content = await this.app.vault.read(file);
-        const { title, tasks, archivedSection } = parseMarkdown(content);
-        return { filePath: file.path, title, tasks, archivedSection };
+        const { title, description, tasks, archivedSection } = parseMarkdown(content);
+        return { filePath: file.path, title, description, tasks, archivedSection };
       }),
     );
 
@@ -182,6 +182,7 @@ export class ZenTodoController {
           list.title,
           list.tasks,
           list.archivedSection,
+          list.description,
         );
         await this.app.vault.process(abstract, () => content);
       }
@@ -256,6 +257,9 @@ export class ZenTodoController {
       });
       return;
     }
+
+    const descEl = el.createDiv({ cls: "zen-todo-description" });
+    this.renderDescription(descEl, activeList);
 
     const inputEl = el.createDiv({ cls: "zen-todo-input-wrapper" });
     renderTaskInput(inputEl, (text, dueDate) =>
@@ -349,6 +353,13 @@ export class ZenTodoController {
         this.addingSubtaskFor = null;
         this.render();
       });
+
+      if (list.description) {
+        groupEl.createDiv({
+          cls: "zen-todo-all-group-description",
+          text: list.description,
+        });
+      }
 
       const incomplete = list.tasks.filter((t) => !t.completed);
 
@@ -497,6 +508,7 @@ export class ZenTodoController {
           sourceList.title,
           sourceList.tasks,
           sourceList.archivedSection,
+          sourceList.description,
         );
         await this.app.vault.process(sourceFile, () => srcContent);
       }
@@ -505,6 +517,7 @@ export class ZenTodoController {
           targetList.title,
           targetList.tasks,
           targetList.archivedSection,
+          targetList.description,
         );
         await this.app.vault.process(targetFile, () => tgtContent);
       }
@@ -555,6 +568,7 @@ export class ZenTodoController {
           sourceList.title,
           sourceList.tasks,
           sourceList.archivedSection,
+          sourceList.description,
         );
         await this.app.vault.process(sourceFile, () => srcContent);
       }
@@ -563,6 +577,7 @@ export class ZenTodoController {
           targetList.title,
           targetList.tasks,
           targetList.archivedSection,
+          targetList.description,
         );
         await this.app.vault.process(targetFile, () => tgtContent);
       }
@@ -781,6 +796,7 @@ export class ZenTodoController {
       list.title,
       list.tasks,
       list.archivedSection,
+      list.description,
     );
     this.isSaving = true;
     try {
@@ -854,6 +870,7 @@ export class ZenTodoController {
             list.title,
             list.tasks,
             list.archivedSection,
+            list.description,
           );
           await this.app.vault.process(abstract, () => content);
         }
@@ -879,6 +896,63 @@ export class ZenTodoController {
       text: t("undo.button"),
     });
     undoBtn.addEventListener("click", () => this.performUndo());
+  }
+
+  private renderDescription(el: HTMLElement, list: TodoList): void {
+    if (list.description) {
+      const textEl = el.createDiv({
+        cls: "zen-todo-description-text",
+        text: list.description,
+      });
+      textEl.addEventListener("click", () =>
+        this.startDescriptionEdit(el, list),
+      );
+    } else {
+      const addEl = el.createDiv({
+        cls: "zen-todo-description-add",
+        text: t("description.addPlaceholder"),
+      });
+      addEl.addEventListener("click", () =>
+        this.startDescriptionEdit(el, list),
+      );
+    }
+  }
+
+  private startDescriptionEdit(el: HTMLElement, list: TodoList): void {
+    el.empty();
+    const textarea = el.createEl("textarea", {
+      cls: "zen-todo-description-input",
+    });
+    textarea.value = list.description ?? "";
+    let saved = false;
+
+    const save = async () => {
+      if (saved) return;
+      saved = true;
+      const newDesc = textarea.value.trim() || undefined;
+      await this.updateDescription(list, newDesc);
+    };
+
+    textarea.addEventListener("blur", save);
+    textarea.addEventListener("keydown", (e: KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+        e.preventDefault();
+        void save();
+      } else if (e.key === "Escape") {
+        saved = true;
+        this.render();
+      }
+    });
+
+    setTimeout(() => textarea.focus(), 0);
+  }
+
+  private async updateDescription(
+    list: TodoList,
+    newDescription: string | undefined,
+  ): Promise<void> {
+    list.description = newDescription;
+    await this.saveList(list);
   }
 }
 
