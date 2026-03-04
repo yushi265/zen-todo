@@ -227,6 +227,27 @@
 	border-color: var(--interactive-accent);
 }
 
+.zen-todo-sort-direction-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	background: transparent;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	color: var(--text-muted);
+	font-size: var(--font-small);
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
+.zen-todo-sort-direction-btn:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
 /* --------------------------------------------------------------------------
    Content scroll area
    -------------------------------------------------------------------------- */

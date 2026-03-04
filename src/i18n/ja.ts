@@ -116,6 +116,8 @@ export const ja: TranslationKeys = {
   "sort.dueDate": "期日順",
   "sort.createdDate": "作成日順",
   "sort.alphabetical": "名前順",
+  "sort.ascending": "昇順",
+  "sort.descending": "降順",
 
   // settings.ts
   "settings.language.name": "言語",

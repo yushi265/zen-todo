@@ -114,6 +114,8 @@ export interface TranslationKeys {
   "sort.dueDate": string;
   "sort.createdDate": string;
   "sort.alphabetical": string;
+  "sort.ascending": string;
+  "sort.descending": string;
 
   // settings.ts
   "settings.language.name": string;

@@ -116,6 +116,8 @@ export const en: TranslationKeys = {
   "sort.dueDate": "Due date",
   "sort.createdDate": "Created date",
   "sort.alphabetical": "Alphabetical",
+  "sort.ascending": "Ascending",
+  "sort.descending": "Descending",
 
   // settings.ts
   "settings.language.name": "Language",

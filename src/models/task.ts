@@ -1,4 +1,4 @@
-import type { TaskItem, SortKey } from "../types";
+import type { TaskItem, SortKey, SortDirection } from "../types";
 import {
   DUE_DATE_EMOJI,
   DONE_DATE_EMOJI,
@@ -72,24 +72,25 @@ export function cloneTasks(tasks: TaskItem[]): TaskItem[] {
   return tasks.map(cloneTask);
 }
 
-export function sortTasks(tasks: TaskItem[], sortKey: SortKey): TaskItem[] {
+export function sortTasks(tasks: TaskItem[], sortKey: SortKey, direction: SortDirection = "asc"): TaskItem[] {
   if (sortKey === "manual") return tasks;
+  const dir = direction === "desc" ? -1 : 1;
   return [...tasks].sort((a, b) => {
     switch (sortKey) {
       case "dueDate": {
         if (!a.dueDate && !b.dueDate) return 0;
         if (!a.dueDate) return 1;
         if (!b.dueDate) return -1;
-        return a.dueDate.localeCompare(b.dueDate);
+        return a.dueDate.localeCompare(b.dueDate) * dir;
       }
       case "createdDate": {
         if (!a.createdDate && !b.createdDate) return 0;
         if (!a.createdDate) return 1;
         if (!b.createdDate) return -1;
-        return b.createdDate.localeCompare(a.createdDate); // descending: newest first
+        return b.createdDate.localeCompare(a.createdDate) * dir;
       }
       case "alphabetical": {
-        return a.text.localeCompare(b.text, undefined, { sensitivity: "accent" });
+        return a.text.localeCompare(b.text, undefined, { sensitivity: "accent" }) * dir;
       }
       default:
         return 0;

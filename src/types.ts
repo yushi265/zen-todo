@@ -19,6 +19,8 @@ export interface TodoList {
 
 export type SortKey = "manual" | "dueDate" | "createdDate" | "alphabetical";
 
+export type SortDirection = "asc" | "desc";
+
 export interface ZenTodoSettings {
   todoFolder: string;
   showCompletedByDefault: boolean;

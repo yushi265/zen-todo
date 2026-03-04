@@ -8,6 +8,7 @@ import type {
   ListSnapshot,
   UndoActionType,
   SortKey,
+  SortDirection,
 } from "../types";
 import { parseMarkdown } from "../parser/markdown-parser";
 import {
@@ -55,6 +56,14 @@ export class ZenTodoController {
   private undoState: UndoState | null = null;
   private undoTimer: ReturnType<typeof setTimeout> | null = null;
   private activeSortKey: SortKey | null = null;
+  private activeSortDirection: SortDirection | null = null;
+
+  private static readonly DEFAULT_SORT_DIRECTIONS: Record<SortKey, SortDirection> = {
+    manual: "asc",
+    dueDate: "asc",
+    createdDate: "desc",
+    alphabetical: "asc",
+  };
 
   constructor(
     deps: ZenTodoControllerDeps,
@@ -218,6 +227,10 @@ export class ZenTodoController {
     return this.activeSortKey ?? this.settings.defaultSortKey;
   }
 
+  private getCurrentSortDirection(): SortDirection {
+    return this.activeSortDirection ?? ZenTodoController.DEFAULT_SORT_DIRECTIONS[this.getCurrentSortKey()];
+  }
+
   private getActiveList(): TodoList | null {
     if (!this.activeFilePath || this.activeFilePath === ALL_LISTS_PATH) return null;
     return this.lists.find((l) => l.filePath === this.activeFilePath) ?? null;
@@ -242,6 +255,7 @@ export class ZenTodoController {
         this.activeFilePath = fp;
         this.addingSubtaskFor = null;
         this.activeSortKey = null;
+        this.activeSortDirection = null;
         this.render();
       },
       this.onCreateNew,
@@ -285,9 +299,10 @@ export class ZenTodoController {
     this.renderSortSelector(toolbarEl);
 
     const sortKey = this.getCurrentSortKey();
+    const sortDirection = this.getCurrentSortDirection();
     const contentDiv = el.createDiv({ cls: "zen-todo-content" });
-    const incomplete = sortTasks(activeList.tasks.filter((t) => !t.completed), sortKey);
-    const complete = sortTasks(activeList.tasks.filter((t) => t.completed), sortKey);
+    const incomplete = sortTasks(activeList.tasks.filter((t) => !t.completed), sortKey, sortDirection);
+    const complete = sortTasks(activeList.tasks.filter((t) => t.completed), sortKey, sortDirection);
 
     renderTaskSection(
       contentDiv,
@@ -351,6 +366,7 @@ export class ZenTodoController {
     const contentDiv = el.createDiv({ cls: "zen-todo-content" });
     const groupMeta: { filePath: string; groupEl: HTMLElement; list: TodoList }[] = [];
     const sortKey = this.getCurrentSortKey();
+    const sortDirection = this.getCurrentSortDirection();
 
     // Pass 1: Build DOM for each list group (onReorder suppressed — cross-list handler takes over)
     for (const list of this.lists) {
@@ -367,6 +383,7 @@ export class ZenTodoController {
         this.activeFilePath = list.filePath;
         this.addingSubtaskFor = null;
         this.activeSortKey = null;
+        this.activeSortDirection = null;
         this.render();
       });
 
@@ -377,7 +394,7 @@ export class ZenTodoController {
         });
       }
 
-      const incomplete = sortTasks(list.tasks.filter((t) => !t.completed), sortKey);
+      const incomplete = sortTasks(list.tasks.filter((t) => !t.completed), sortKey, sortDirection);
 
       renderTaskSection(
         groupEl,
@@ -924,6 +941,23 @@ export class ZenTodoController {
 
     select.addEventListener("change", () => {
       this.activeSortKey = select.value as SortKey;
+      this.activeSortDirection = null;
+      this.render();
+    });
+
+    const direction = this.getCurrentSortDirection();
+    const dirBtn = wrapper.createEl("button", {
+      cls: "zen-todo-sort-direction-btn",
+      attr: {
+        "aria-label": direction === "asc" ? t("sort.ascending") : t("sort.descending"),
+      },
+      text: direction === "asc" ? "↑" : "↓",
+    });
+    if (current === "manual") {
+      dirBtn.addClass("is-hidden");
+    }
+    dirBtn.addEventListener("click", () => {
+      this.activeSortDirection = this.getCurrentSortDirection() === "asc" ? "desc" : "asc";
       this.render();
     });
   }
