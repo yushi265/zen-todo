@@ -109,6 +109,14 @@ export const ja: TranslationKeys = {
   "query.filterList": "リスト: {{name}}",
   "query.unknownFilter": "不明なフィルター: \"{{filter}}\"",
 
+  // todo-controller.ts — sort selector
+  "sort.label": "並び替え:",
+  "sort.ariaLabel": "タスクの並び替え",
+  "sort.manual": "手動",
+  "sort.dueDate": "期日順",
+  "sort.createdDate": "作成日順",
+  "sort.alphabetical": "名前順",
+
   // settings.ts
   "settings.language.name": "言語",
   "settings.language.desc": "表示言語を上書きします。「自動」にすると Obsidian の言語設定に従います。",
@@ -120,6 +128,8 @@ export const ja: TranslationKeys = {
   "settings.autoComplete.name": "親タスクを自動完了",
   "settings.autoComplete.desc":
     "すべてのサブタスクが完了したとき、親タスクを自動的に完了にします。",
+  "settings.defaultSort.name": "デフォルトの並び順",
+  "settings.defaultSort.desc": "リストを開いたときに適用される並び順。パネル内のソートセレクターでセッション中に変更できます。",
 
   // parser/markdown-parser.ts
   "parser.untitled": "無題",

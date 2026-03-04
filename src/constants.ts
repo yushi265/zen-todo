@@ -8,6 +8,7 @@ export const DEFAULT_SETTINGS: ZenTodoSettings = {
   autoCompleteParent: true,
   listOrder: [],
   language: "",
+  defaultSortKey: "manual",
 };
 
 export const ALL_LISTS_PATH = "__all__";

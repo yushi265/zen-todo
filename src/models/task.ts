@@ -1,4 +1,4 @@
-import type { TaskItem } from "../types";
+import type { TaskItem, SortKey } from "../types";
 import {
   DUE_DATE_EMOJI,
   DONE_DATE_EMOJI,
@@ -70,4 +70,29 @@ export function cloneTask(task: TaskItem): TaskItem {
 
 export function cloneTasks(tasks: TaskItem[]): TaskItem[] {
   return tasks.map(cloneTask);
+}
+
+export function sortTasks(tasks: TaskItem[], sortKey: SortKey): TaskItem[] {
+  if (sortKey === "manual") return tasks;
+  return [...tasks].sort((a, b) => {
+    switch (sortKey) {
+      case "dueDate": {
+        if (!a.dueDate && !b.dueDate) return 0;
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return a.dueDate.localeCompare(b.dueDate);
+      }
+      case "createdDate": {
+        if (!a.createdDate && !b.createdDate) return 0;
+        if (!a.createdDate) return 1;
+        if (!b.createdDate) return -1;
+        return b.createdDate.localeCompare(a.createdDate); // descending: newest first
+      }
+      case "alphabetical": {
+        return a.text.localeCompare(b.text, undefined, { sensitivity: "accent" });
+      }
+      default:
+        return 0;
+    }
+  });
 }

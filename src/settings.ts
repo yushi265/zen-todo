@@ -68,5 +68,22 @@ export class ZenTodoSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+
+		new Setting(containerEl)
+			.setName(t("settings.defaultSort.name"))
+			.setDesc(t("settings.defaultSort.desc"))
+			.addDropdown((drop) =>
+				drop
+					.addOption("manual", t("sort.manual"))
+					.addOption("dueDate", t("sort.dueDate"))
+					.addOption("createdDate", t("sort.createdDate"))
+					.addOption("alphabetical", t("sort.alphabetical"))
+					.setValue(this.plugin.settings.defaultSortKey)
+					.onChange(async (value) => {
+						this.plugin.settings.defaultSortKey = value as import("./types").SortKey;
+						await this.plugin.saveSettings();
+						this.plugin.refreshAllViews();
+					})
+			);
 	}
 }

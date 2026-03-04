@@ -7,6 +7,7 @@ import type {
   UndoState,
   ListSnapshot,
   UndoActionType,
+  SortKey,
 } from "../types";
 import { parseMarkdown } from "../parser/markdown-parser";
 import {
@@ -27,6 +28,7 @@ import {
   uncompleteTask,
   allSubtasksCompleted,
   cloneTasks,
+  sortTasks,
 } from "../models/task";
 import { ALL_LISTS_PATH } from "../constants";
 
@@ -52,6 +54,7 @@ export class ZenTodoController {
   private shouldFocusTaskInput = false;
   private undoState: UndoState | null = null;
   private undoTimer: ReturnType<typeof setTimeout> | null = null;
+  private activeSortKey: SortKey | null = null;
 
   constructor(
     deps: ZenTodoControllerDeps,
@@ -211,6 +214,10 @@ export class ZenTodoController {
     this.render();
   }
 
+  private getCurrentSortKey(): SortKey {
+    return this.activeSortKey ?? this.settings.defaultSortKey;
+  }
+
   private getActiveList(): TodoList | null {
     if (!this.activeFilePath || this.activeFilePath === ALL_LISTS_PATH) return null;
     return this.lists.find((l) => l.filePath === this.activeFilePath) ?? null;
@@ -234,6 +241,7 @@ export class ZenTodoController {
       (fp) => {
         this.activeFilePath = fp;
         this.addingSubtaskFor = null;
+        this.activeSortKey = null;
         this.render();
       },
       this.onCreateNew,
@@ -273,9 +281,13 @@ export class ZenTodoController {
       if (input) setTimeout(() => input.focus(), 0);
     }
 
+    const toolbarEl = el.createDiv({ cls: "zen-todo-toolbar" });
+    this.renderSortSelector(toolbarEl);
+
+    const sortKey = this.getCurrentSortKey();
     const contentDiv = el.createDiv({ cls: "zen-todo-content" });
-    const incomplete = activeList.tasks.filter((t) => !t.completed);
-    const complete = activeList.tasks.filter((t) => t.completed);
+    const incomplete = sortTasks(activeList.tasks.filter((t) => !t.completed), sortKey);
+    const complete = sortTasks(activeList.tasks.filter((t) => t.completed), sortKey);
 
     renderTaskSection(
       contentDiv,
@@ -292,8 +304,10 @@ export class ZenTodoController {
           this.addingSubtaskFor = null;
           this.render();
         },
-        onReorder: (orderedIds, parentTask) =>
-          this.reorderTasks(activeList, orderedIds, parentTask),
+        onReorder: sortKey === "manual"
+          ? (orderedIds, parentTask) =>
+              this.reorderTasks(activeList, orderedIds, parentTask)
+          : undefined,
         onDragStateChange: (dragging) => {
           this.isDragging = dragging;
         },
@@ -336,6 +350,7 @@ export class ZenTodoController {
 
     const contentDiv = el.createDiv({ cls: "zen-todo-content" });
     const groupMeta: { filePath: string; groupEl: HTMLElement; list: TodoList }[] = [];
+    const sortKey = this.getCurrentSortKey();
 
     // Pass 1: Build DOM for each list group (onReorder suppressed — cross-list handler takes over)
     for (const list of this.lists) {
@@ -351,6 +366,7 @@ export class ZenTodoController {
       headerEl.addEventListener("click", () => {
         this.activeFilePath = list.filePath;
         this.addingSubtaskFor = null;
+        this.activeSortKey = null;
         this.render();
       });
 
@@ -361,7 +377,7 @@ export class ZenTodoController {
         });
       }
 
-      const incomplete = list.tasks.filter((t) => !t.completed);
+      const incomplete = sortTasks(list.tasks.filter((t) => !t.completed), sortKey);
 
       renderTaskSection(
         groupEl,
@@ -386,7 +402,9 @@ export class ZenTodoController {
       );
     }
 
-    // Pass 2: Attach cross-list drag handles to root task items
+    // Pass 2: Attach cross-list drag handles to root task items (manual sort only)
+    if (sortKey !== "manual") return;
+
     const listGroups: ListGroupInfo[] = groupMeta.map(({ filePath, groupEl }) => ({
       filePath,
       groupEl,
@@ -880,6 +898,34 @@ export class ZenTodoController {
     }
 
     this.render();
+  }
+
+  private renderSortSelector(el: HTMLElement): void {
+    const wrapper = el.createDiv({ cls: "zen-todo-sort-wrapper" });
+    wrapper.createSpan({ cls: "zen-todo-sort-label", text: t("sort.label") });
+
+    const select = wrapper.createEl("select", {
+      cls: "zen-todo-sort-select",
+      attr: { "aria-label": t("sort.ariaLabel") },
+    });
+
+    const options: { value: SortKey; label: string }[] = [
+      { value: "manual", label: t("sort.manual") },
+      { value: "dueDate", label: t("sort.dueDate") },
+      { value: "createdDate", label: t("sort.createdDate") },
+      { value: "alphabetical", label: t("sort.alphabetical") },
+    ];
+
+    const current = this.getCurrentSortKey();
+    for (const opt of options) {
+      const optEl = select.createEl("option", { value: opt.value, text: opt.label });
+      if (opt.value === current) optEl.selected = true;
+    }
+
+    select.addEventListener("change", () => {
+      this.activeSortKey = select.value as SortKey;
+      this.render();
+    });
   }
 
   private renderUndoToast(el: HTMLElement): void {

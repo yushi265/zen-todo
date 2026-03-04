@@ -189,6 +189,45 @@
 }
 
 /* --------------------------------------------------------------------------
+   Sort toolbar
+   -------------------------------------------------------------------------- */
+
+.zen-todo-toolbar {
+	display: flex;
+	justify-content: flex-end;
+	padding: var(--size-4-1) var(--size-4-3);
+	flex-shrink: 0;
+}
+
+.zen-todo-sort-wrapper {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+}
+
+.zen-todo-sort-label {
+	font-size: var(--font-smallest);
+	color: var(--text-muted);
+	white-space: nowrap;
+}
+
+.zen-todo-sort-select {
+	font-size: var(--font-smallest);
+	font-family: var(--font-interface);
+	color: var(--text-normal);
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	padding: 2px var(--size-4-2);
+	cursor: pointer;
+}
+
+.zen-todo-sort-select:focus {
+	outline: none;
+	border-color: var(--interactive-accent);
+}
+
+/* --------------------------------------------------------------------------
    Content scroll area
    -------------------------------------------------------------------------- */
 

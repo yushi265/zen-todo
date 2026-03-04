@@ -107,6 +107,14 @@ export interface TranslationKeys {
   "query.filterList": string;
   "query.unknownFilter": string;
 
+  // todo-controller.ts — sort selector
+  "sort.label": string;
+  "sort.ariaLabel": string;
+  "sort.manual": string;
+  "sort.dueDate": string;
+  "sort.createdDate": string;
+  "sort.alphabetical": string;
+
   // settings.ts
   "settings.language.name": string;
   "settings.language.desc": string;
@@ -117,6 +125,8 @@ export interface TranslationKeys {
   "settings.showCompleted.desc": string;
   "settings.autoComplete.name": string;
   "settings.autoComplete.desc": string;
+  "settings.defaultSort.name": string;
+  "settings.defaultSort.desc": string;
 
   // parser/markdown-parser.ts
   "parser.untitled": string;

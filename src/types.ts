@@ -17,12 +17,15 @@ export interface TodoList {
   archivedSection?: string;
 }
 
+export type SortKey = "manual" | "dueDate" | "createdDate" | "alphabetical";
+
 export interface ZenTodoSettings {
   todoFolder: string;
   showCompletedByDefault: boolean;
   autoCompleteParent: boolean;
   listOrder: string[];
   language: string; // "" = follow Obsidian, "en" | "ja" | ... = override
+  defaultSortKey: SortKey;
 }
 
 export type UndoActionType =

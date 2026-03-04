@@ -109,6 +109,14 @@ export const en: TranslationKeys = {
   "query.filterList": "List: {{name}}",
   "query.unknownFilter": 'Unknown filter: "{{filter}}"',
 
+  // todo-controller.ts — sort selector
+  "sort.label": "Sort:",
+  "sort.ariaLabel": "Sort tasks by",
+  "sort.manual": "Manual",
+  "sort.dueDate": "Due date",
+  "sort.createdDate": "Created date",
+  "sort.alphabetical": "Alphabetical",
+
   // settings.ts
   "settings.language.name": "Language",
   "settings.language.desc": "Override the display language. Leave as Auto to follow Obsidian's language setting.",
@@ -120,6 +128,8 @@ export const en: TranslationKeys = {
   "settings.autoComplete.name": "Auto-complete parent task",
   "settings.autoComplete.desc":
     "Automatically complete parent tasks when all subtasks are done.",
+  "settings.defaultSort.name": "Default sort order",
+  "settings.defaultSort.desc": "Sort order applied when opening a list. Can be overridden per-session using the sort selector in the panel.",
 
   // parser/markdown-parser.ts
   "parser.untitled": "Untitled",
