@@ -5,6 +5,7 @@ import type { TodoList, TaskItem } from "../types";
 import { parseMarkdown } from "../parser/markdown-parser";
 import { serializeToMarkdown } from "../parser/markdown-serializer";
 import { parseQuery } from "../query/query-parser";
+import { ALL_LISTS_PATH } from "../constants";
 import { executeQuery } from "../query/query-engine";
 import { renderQueryView } from "./query-view-renderer";
 import { completeTask, uncompleteTask } from "../models/task";
@@ -37,10 +38,11 @@ export class ZenTodoCodeBlockChild extends MarkdownRenderChild {
     const innerEl = this.containerEl.createDiv();
     this.innerEl = innerEl;
 
-    const { query, errors } = parseQuery(this.source);
+    const isViewAll = /^view:\s*all$/i.test(this.source.trim());
+    const { query, errors } = isViewAll ? { query: null, errors: [] } : parseQuery(this.source);
 
     if (query === null) {
-      // Empty source → full interactive panel (existing behavior)
+      // Empty source or "view: all" → full interactive panel
       this.isQueryMode = false;
       this.controller = new ZenTodoController(
         {
@@ -51,6 +53,9 @@ export class ZenTodoCodeBlockChild extends MarkdownRenderChild {
         innerEl,
         () => this.controller?.createNewList(),
       );
+      if (isViewAll) {
+        this.controller.activeFilePath = ALL_LISTS_PATH;
+      }
       await this.controller.initialize();
     } else {
       // Query mode
