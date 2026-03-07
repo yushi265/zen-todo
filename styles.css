@@ -708,8 +708,8 @@ details[open] > .zen-todo-completed-summary::before {
 
 body.is-mobile .zen-todo-drag-handle {
 	opacity: 0.6;
-	width: 28px;
-	height: 28px;
+	width: 36px;
+	height: 36px;
 }
 
 /* Dragging state */
@@ -1162,4 +1162,69 @@ body.is-mobile .zen-todo-drag-handle {
 .zen-todo-undo-btn:focus-visible {
 	outline: 2px solid var(--interactive-accent);
 	outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Mobile overrides
+   ========================================================================== */
+
+body.is-mobile .zen-todo-view {
+	-webkit-tap-highlight-color: transparent;
+}
+
+body.is-mobile .zen-todo-task-row {
+	min-height: 44px;
+}
+
+body.is-mobile .zen-todo-checkbox {
+	width: 24px;
+	height: 24px;
+}
+
+body.is-mobile .zen-todo-sort-direction-btn {
+	width: 36px;
+	height: 36px;
+}
+
+body.is-mobile .zen-todo-input-row {
+	flex-wrap: wrap;
+}
+
+body.is-mobile .zen-todo-text-input {
+	flex-basis: 100%;
+	order: -1;
+}
+
+body.is-mobile .zen-todo-text-input,
+body.is-mobile .zen-todo-input-date,
+body.is-mobile .zen-todo-subtask-input,
+body.is-mobile .zen-todo-task-edit-input,
+body.is-mobile .zen-todo-description-input,
+body.is-mobile .zen-todo-tab-rename-input {
+	font-size: 16px;
+}
+
+body.is-mobile .zen-todo-subtask-input {
+	min-height: 44px;
+}
+
+body.is-mobile .zen-todo-content {
+	overscroll-behavior: contain;
+}
+
+body.is-mobile .zen-todo-embedded {
+	max-height: 70vh;
+}
+
+body.is-mobile .zen-todo-embedded .zen-todo-content {
+	max-height: 50vh;
+}
+
+body.is-mobile .zen-todo-undo-toast {
+	bottom: auto;
+	top: var(--size-4-3);
+}
+
+body.is-mobile .zen-todo-filter-dropdown {
+	max-width: calc(100vw - 32px);
 }

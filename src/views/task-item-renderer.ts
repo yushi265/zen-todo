@@ -551,10 +551,16 @@ function addLongPressHandler(
   duration = 500,
 ): void {
   let timer: number | null = null;
+  let startX = 0;
+  let startY = 0;
+  const DEAD_ZONE = 10;
 
   el.addEventListener(
     "touchstart",
     (e: TouchEvent) => {
+      const touch = e.touches[0];
+      startX = touch.clientX;
+      startY = touch.clientY;
       timer = window.setTimeout(() => {
         // Prevent the subsequent tap/click from firing
         el.addEventListener(
@@ -581,10 +587,15 @@ function addLongPressHandler(
 
   el.addEventListener(
     "touchmove",
-    () => {
+    (e: TouchEvent) => {
       if (timer) {
-        clearTimeout(timer);
-        timer = null;
+        const touch = e.touches[0];
+        const dx = touch.clientX - startX;
+        const dy = touch.clientY - startY;
+        if (dx * dx + dy * dy > DEAD_ZONE * DEAD_ZONE) {
+          clearTimeout(timer);
+          timer = null;
+        }
       }
     },
     { passive: true },
