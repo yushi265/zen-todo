@@ -1124,9 +1124,9 @@ body.is-mobile .zen-todo-drag-handle {
    Undo Toast
    -------------------------------------------------------------------------- */
 
-@keyframes zen-todo-slide-up {
+@keyframes zen-todo-slide-down {
 	from {
-		transform: translateY(8px);
+		transform: translateY(-8px);
 		opacity: 0;
 	}
 	to {
@@ -1137,7 +1137,7 @@ body.is-mobile .zen-todo-drag-handle {
 
 .zen-todo-undo-toast {
 	position: absolute;
-	bottom: 40px;
+	top: var(--size-4-3);
 	left: var(--size-4-3);
 	right: var(--size-4-3);
 	z-index: 100;
@@ -1149,7 +1149,7 @@ body.is-mobile .zen-todo-drag-handle {
 	border: 1px solid var(--background-modifier-border);
 	border-radius: var(--radius-m);
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-	animation: zen-todo-slide-up 0.2s ease;
+	animation: zen-todo-slide-down 0.2s ease;
 }
 
 .zen-todo-undo-message {
@@ -1240,10 +1240,6 @@ body.is-mobile .zen-todo-embedded .zen-todo-content {
 	max-height: 50vh;
 }
 
-body.is-mobile .zen-todo-undo-toast {
-	bottom: auto;
-	top: var(--size-4-3);
-}
 
 body.is-mobile .zen-todo-filter-dropdown {
 	max-width: calc(100vw - 32px);

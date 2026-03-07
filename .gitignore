@@ -3,3 +3,5 @@ main.js
 *.js.map
 docs/.vitepress/dist
 docs/.vitepress/cache
+.claude/settings.local.json
+.claude/worktrees/
