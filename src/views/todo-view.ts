@@ -1,5 +1,5 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
-import { VIEW_TYPE_ZEN_TODO } from "../constants";
+import { VIEW_TYPE_ZEN_TODO, ALL_LISTS_PATH } from "../constants";
 import { ZenTodoController } from "./todo-controller";
 import type ZenTodoPlugin from "../main";
 
@@ -62,6 +62,14 @@ export class ZenTodoView extends ItemView {
 	/** Public: opens the new-list modal (triggered by command). */
 	async createNewList(): Promise<void> {
 		await this.controller?.createNewList();
+	}
+
+	/** Switch to the All view tab. */
+	showAllView(): void {
+		if (this.controller) {
+			this.controller.activeFilePath = ALL_LISTS_PATH;
+			this.controller.render();
+		}
 	}
 
 	/** Re-render the view immediately (e.g. after a language change). */

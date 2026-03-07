@@ -5,6 +5,7 @@ export const ja: TranslationKeys = {
   "ribbon.openZenTodo": "ZenTodo を開く",
   "command.openTodoList": "Todo リストを開く",
   "command.createNewList": "新しい Todo リストを作成",
+  "command.openAllView": "すべてのビューを開く",
 
   // date-utils.ts
   "date.today": "今日",

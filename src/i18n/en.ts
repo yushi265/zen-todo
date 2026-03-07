@@ -5,6 +5,7 @@ export const en: TranslationKeys = {
   "ribbon.openZenTodo": "Open ZenTodo",
   "command.openTodoList": "Open todo list",
   "command.createNewList": "Create new todo list",
+  "command.openAllView": "Open All view",
 
   // date-utils.ts
   "date.today": "Today",

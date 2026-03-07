@@ -3,6 +3,7 @@ export interface TranslationKeys {
   "ribbon.openZenTodo": string;
   "command.openTodoList": string;
   "command.createNewList": string;
+  "command.openAllView": string;
 
   // date-utils.ts
   "date.today": string;

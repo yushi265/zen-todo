@@ -39,6 +39,16 @@ export default class ZenTodoPlugin extends Plugin {
       },
     });
 
+    this.addCommand({
+      id: "open-all-view",
+      name: t("command.openAllView"),
+      callback: async () => {
+        await this.activateView();
+        const view = this.getView();
+        if (view) view.showAllView();
+      },
+    });
+
     this.addSettingTab(new ZenTodoSettingTab(this.app, this));
 
     // Register zen-todo code block processor
