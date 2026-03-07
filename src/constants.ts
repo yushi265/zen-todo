@@ -7,6 +7,7 @@ export const DEFAULT_SETTINGS: ZenTodoSettings = {
   showCompletedByDefault: false,
   autoCompleteParent: true,
   listOrder: [],
+  excludedFromAll: [],
   language: "",
   defaultSortKey: "manual",
 };

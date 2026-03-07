@@ -109,6 +109,10 @@ export const en: TranslationKeys = {
   "query.filterList": "List: {{name}}",
   "query.unknownFilter": 'Unknown filter: "{{filter}}"',
 
+  // todo-controller.ts — All view filter
+  "allView.filterLists": "Filter lists",
+  "allView.allHidden": "All lists are hidden",
+
   // todo-controller.ts — sort selector
   "sort.label": "Sort:",
   "sort.ariaLabel": "Sort tasks by",

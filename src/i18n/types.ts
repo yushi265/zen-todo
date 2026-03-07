@@ -107,6 +107,10 @@ export interface TranslationKeys {
   "query.filterList": string;
   "query.unknownFilter": string;
 
+  // todo-controller.ts — All view filter
+  "allView.filterLists": string;
+  "allView.allHidden": string;
+
   // todo-controller.ts — sort selector
   "sort.label": string;
   "sort.ariaLabel": string;

@@ -199,6 +199,67 @@
 	flex-shrink: 0;
 }
 
+.zen-todo-filter-wrapper {
+	position: relative;
+	display: flex;
+	align-items: center;
+}
+
+.zen-todo-filter-btn {
+	background: none;
+	border: none;
+	color: var(--text-muted);
+	cursor: pointer;
+	padding: var(--size-4-1);
+	border-radius: var(--radius-s);
+	display: flex;
+	align-items: center;
+}
+
+.zen-todo-filter-btn:hover {
+	color: var(--text-normal);
+	background: var(--background-modifier-hover);
+}
+
+.zen-todo-filter-btn.is-filtering {
+	color: var(--color-accent);
+}
+
+.zen-todo-filter-dropdown {
+	position: absolute;
+	top: 100%;
+	right: 0;
+	z-index: var(--layer-popover);
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	box-shadow: var(--shadow-s);
+	padding: var(--size-4-2);
+	min-width: 160px;
+	max-height: 240px;
+	overflow-y: auto;
+}
+
+.zen-todo-filter-row {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	padding: var(--size-4-1) var(--size-4-2);
+	border-radius: var(--radius-s);
+	cursor: pointer;
+}
+
+.zen-todo-filter-row:hover {
+	background: var(--background-modifier-hover);
+}
+
+.zen-todo-filter-row label {
+	font-size: var(--font-small);
+	color: var(--text-normal);
+	cursor: pointer;
+	flex: 1;
+}
+
 .zen-todo-sort-wrapper {
 	display: flex;
 	align-items: center;

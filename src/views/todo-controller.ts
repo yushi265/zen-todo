@@ -1,4 +1,4 @@
-import { App, TFile, Modal, normalizePath } from "obsidian";
+import { App, TFile, Modal, normalizePath, setIcon } from "obsidian";
 import { t } from "../i18n";
 import type {
   TodoList,
@@ -345,22 +345,48 @@ export class ZenTodoController {
       return;
     }
 
-    // Task input with list selector
+    // Clean up stale exclusions (files that no longer exist)
+    const validPaths = new Set(this.lists.map((l) => l.filePath));
+    const cleanedExclusions = this.settings.excludedFromAll.filter((p) => validPaths.has(p));
+    if (cleanedExclusions.length !== this.settings.excludedFromAll.length) {
+      this.settings.excludedFromAll = cleanedExclusions;
+      this._saveSettings();
+    }
+
+    const visibleLists = this.lists.filter(
+      (l) => !this.settings.excludedFromAll.includes(l.filePath),
+    );
+
+    // Toolbar row: filter button
+    const toolbarEl = el.createDiv({ cls: "zen-todo-toolbar" });
+    this.renderAllViewFilter(toolbarEl);
+
+    // Task input with list selector (using visibleLists for default target)
     const inputEl = el.createDiv({ cls: "zen-todo-input-wrapper" });
+    const inputLists = visibleLists.length > 0 ? visibleLists : this.lists;
     renderTaskInput(
       inputEl,
       (text, dueDate, targetFilePath) => {
         const list = targetFilePath
           ? this.lists.find((l) => l.filePath === targetFilePath)
-          : this.lists[0];
+          : inputLists[0];
         if (list) this.addTask(list, text, dueDate);
       },
-      this.lists.map((l) => ({ filePath: l.filePath, title: l.title })),
+      inputLists.map((l) => ({ filePath: l.filePath, title: l.title })),
     );
     if (this.shouldFocusTaskInput) {
       this.shouldFocusTaskInput = false;
       const input = inputEl.querySelector(".zen-todo-text-input") as HTMLInputElement;
       if (input) setTimeout(() => input.focus(), 0);
+    }
+
+    if (visibleLists.length === 0 && this.lists.length > 0) {
+      const contentDiv = el.createDiv({ cls: "zen-todo-content" });
+      contentDiv.createDiv({
+        cls: "zen-todo-empty",
+        text: t("allView.allHidden"),
+      });
+      return;
     }
 
     const contentDiv = el.createDiv({ cls: "zen-todo-content" });
@@ -369,7 +395,7 @@ export class ZenTodoController {
     const sortDirection = this.getCurrentSortDirection();
 
     // Pass 1: Build DOM for each list group (onReorder suppressed — cross-list handler takes over)
-    for (const list of this.lists) {
+    for (const list of visibleLists) {
       const groupEl = contentDiv.createDiv({ cls: "zen-todo-all-group" });
       groupMeta.push({ filePath: list.filePath, groupEl, list });
 
@@ -472,6 +498,74 @@ export class ZenTodoController {
         );
       }
     }
+  }
+
+  private renderAllViewFilter(el: HTMLElement): void {
+    const wrapper = el.createDiv({ cls: "zen-todo-filter-wrapper" });
+    const btn = wrapper.createEl("button", {
+      cls: "zen-todo-filter-btn clickable-icon",
+      attr: { "aria-label": t("allView.filterLists") },
+    });
+    if (this.settings.excludedFromAll.length > 0) {
+      btn.classList.add("is-filtering");
+    }
+    setIcon(btn, "filter");
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.toggleFilterDropdown(wrapper);
+    });
+  }
+
+  private toggleFilterDropdown(wrapper: HTMLElement): void {
+    const existing = wrapper.querySelector(".zen-todo-filter-dropdown");
+    if (existing) {
+      existing.remove();
+      this.render();
+      return;
+    }
+
+    const dropdown = wrapper.createDiv({ cls: "zen-todo-filter-dropdown" });
+
+    // ドロップダウン内クリックの伝播停止（外部クリックハンドラの誤発火防止）
+    dropdown.addEventListener("click", (e) => e.stopPropagation());
+
+    for (const list of this.lists) {
+      const isExcluded = this.settings.excludedFromAll.includes(list.filePath);
+      const row = dropdown.createDiv({ cls: "zen-todo-filter-row" });
+      const cb = row.createEl("input", {
+        type: "checkbox",
+        attr: { id: `zen-filter-${list.filePath}` },
+      });
+      cb.checked = !isExcluded;
+      row.createEl("label", {
+        text: list.title,
+        attr: { for: `zen-filter-${list.filePath}` },
+      });
+      cb.addEventListener("change", () => {
+        if (cb.checked) {
+          this.settings.excludedFromAll = this.settings.excludedFromAll.filter(
+            (p) => p !== list.filePath,
+          );
+        } else {
+          if (!this.settings.excludedFromAll.includes(list.filePath)) {
+            this.settings.excludedFromAll.push(list.filePath);
+          }
+        }
+        this._saveSettings();
+      });
+    }
+
+    // Close on outside click → render で反映
+    setTimeout(() => {
+      document.addEventListener(
+        "click",
+        () => {
+          dropdown.remove();
+          this.render();
+        },
+        { once: true },
+      );
+    }, 0);
   }
 
   private async handleTaskAction(

@@ -109,6 +109,10 @@ export const ja: TranslationKeys = {
   "query.filterList": "リスト: {{name}}",
   "query.unknownFilter": "不明なフィルター: \"{{filter}}\"",
 
+  // todo-controller.ts — All view filter
+  "allView.filterLists": "リストを絞り込む",
+  "allView.allHidden": "すべてのリストが非表示です",
+
   // todo-controller.ts — sort selector
   "sort.label": "並び替え:",
   "sort.ariaLabel": "タスクの並び替え",
