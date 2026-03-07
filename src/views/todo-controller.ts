@@ -57,6 +57,7 @@ export class ZenTodoController {
   private undoTimer: ReturnType<typeof setTimeout> | null = null;
   private activeSortKey: SortKey | null = null;
   private activeSortDirection: SortDirection | null = null;
+  private allViewSelectedList: string | null = null;
 
   private static readonly DEFAULT_SORT_DIRECTIONS: Record<SortKey, SortDirection> = {
     manual: "asc",
@@ -256,6 +257,7 @@ export class ZenTodoController {
         this.addingSubtaskFor = null;
         this.activeSortKey = null;
         this.activeSortDirection = null;
+        this.allViewSelectedList = null;
         this.render();
       },
       this.onCreateNew,
@@ -373,6 +375,8 @@ export class ZenTodoController {
         if (list) this.addTask(list, text, dueDate);
       },
       inputLists.map((l) => ({ filePath: l.filePath, title: l.title })),
+      this.allViewSelectedList,
+      (fp) => { this.allViewSelectedList = fp; },
     );
     if (this.shouldFocusTaskInput) {
       this.shouldFocusTaskInput = false;
@@ -410,6 +414,7 @@ export class ZenTodoController {
         this.addingSubtaskFor = null;
         this.activeSortKey = null;
         this.activeSortDirection = null;
+        this.allViewSelectedList = null;
         this.render();
       });
 

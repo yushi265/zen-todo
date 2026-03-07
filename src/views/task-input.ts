@@ -4,6 +4,8 @@ export function renderTaskInput(
 	container: HTMLElement,
 	onAdd: (text: string, dueDate?: string, targetFilePath?: string) => void,
 	lists?: { filePath: string; title: string }[],
+	selectedFilePath?: string | null,
+	onListChange?: (filePath: string) => void,
 ): void {
 	const row = container.createDiv({ cls: "zen-todo-input-row" });
 
@@ -20,6 +22,12 @@ export function renderTaskInput(
 				text: list.title,
 			});
 		}
+		if (selectedFilePath) {
+			listSelect.value = selectedFilePath;
+		}
+		listSelect.addEventListener("change", () => {
+			onListChange?.(listSelect!.value);
+		});
 	}
 
 	const textInput = row.createEl("input", {
