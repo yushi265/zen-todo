@@ -37,7 +37,9 @@ export type UndoActionType =
   | "archive"
   | "archiveAllCompleted"
   | "toggle"
-  | "move";
+  | "move"
+  | "reparent"
+  | "unparent";
 
 export interface ListSnapshot {
   filePath: string;

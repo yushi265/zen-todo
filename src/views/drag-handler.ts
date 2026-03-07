@@ -11,6 +11,13 @@ interface DragState {
 	dropIndex: number;
 	autoScrollTimer: number | null;
 	keydownHandler: ((e: KeyboardEvent) => void) | null;
+	nestTargetEl: HTMLElement | null;
+	nestMode: boolean;
+	unnestMode: boolean;
+	unnestDropIndex: number;
+	unnestSiblings: HTMLElement[];
+	unnestIndicatorEl: HTMLElement | null;
+	unnestContainer: HTMLElement | null;
 }
 
 export function attachDragHandle(
@@ -19,7 +26,9 @@ export function attachDragHandle(
 	dropContainer: HTMLElement,
 	_taskId: string,
 	onReorder: (orderedIds: string[]) => void,
-	onDragStateChange?: (dragging: boolean) => void
+	onDragStateChange?: (dragging: boolean) => void,
+	onNest?: (draggedTaskId: string, targetTaskId: string) => void,
+	onUnnest?: (taskId: string, dropIndex: number) => void
 ): void {
 	const handleEl = createEl("div", { cls: "zen-todo-drag-handle" });
 	setIcon(handleEl, "grip-vertical");
@@ -43,6 +52,13 @@ export function attachDragHandle(
 			dropIndex: 0,
 			autoScrollTimer: null,
 			keydownHandler: null,
+			nestTargetEl: null,
+			nestMode: false,
+			unnestMode: false,
+			unnestDropIndex: 0,
+			unnestSiblings: [],
+			unnestIndicatorEl: null,
+			unnestContainer: null,
 		};
 	});
 
@@ -103,6 +119,103 @@ export function attachDragHandle(
 		const cloneTop = e.clientY - containerRect.top - state.handleOffsetY;
 		state.cloneEl.style.top = `${cloneTop}px`;
 
+		// Un-nest mode detection (only if onUnnest provided — subtask dragged left)
+		if (onUnnest) {
+			const taskItemRect = taskItemEl.getBoundingClientRect();
+			const unnestThreshold = taskItemRect.left - 40;
+
+			if (e.clientX <= unnestThreshold) {
+				if (!state.unnestMode) {
+					state.unnestMode = true;
+					state.cloneEl?.addClass("is-unnest-mode");
+					// Collect root-level siblings for drop position calculation
+					const sameCompleted = taskItemEl.classList.contains("is-completed");
+					const sectionCls = sameCompleted
+						? ".zen-todo-completed-section"
+						: ".zen-todo-incomplete-section";
+					const rootSection = dropContainer.closest(sectionCls) as HTMLElement | null;
+					if (rootSection) {
+						state.unnestContainer = rootSection;
+						state.unnestSiblings = Array.from(
+							rootSection.querySelectorAll(":scope > .zen-todo-task-item")
+						) as HTMLElement[];
+						rootSection.style.position = "relative";
+						state.unnestIndicatorEl = rootSection.createDiv({
+							cls: "zen-todo-drop-indicator",
+						});
+					}
+				}
+				// Exit nest mode if we were in it
+				if (state.nestMode) {
+					state.nestTargetEl?.removeClass("is-nest-target");
+					state.nestTargetEl = null;
+					state.nestMode = false;
+					state.cloneEl?.removeClass("is-nest-mode");
+				}
+				state.indicatorEl.style.display = "none";
+				// Update unnest drop position indicator
+				if (state.unnestIndicatorEl && state.unnestContainer) {
+					const unnestContainerRect = state.unnestContainer.getBoundingClientRect();
+					state.unnestDropIndex = getDropIndex(e.clientY, state.unnestSiblings);
+					positionIndicator(
+						state.unnestIndicatorEl,
+						state.unnestSiblings,
+						state.unnestDropIndex,
+						unnestContainerRect,
+					);
+				}
+				updateAutoScroll(dropContainer, e.clientY, state);
+				return;
+			}
+		}
+
+		// Exit unnest mode if we moved back right
+		if (state.unnestMode) {
+			state.unnestMode = false;
+			state.cloneEl?.removeClass("is-unnest-mode");
+			state.unnestIndicatorEl?.remove();
+			state.unnestIndicatorEl = null;
+			if (state.unnestContainer) {
+				state.unnestContainer.style.position = "";
+				state.unnestContainer = null;
+			}
+			state.unnestSiblings = [];
+			state.indicatorEl.style.display = "";
+		}
+
+		// Nest mode detection (only if onNest provided and dragged task has no subtasks)
+		if (onNest && !taskItemEl.querySelector(":scope > .zen-todo-subtasks")) {
+			const taskItemRect = taskItemEl.getBoundingClientRect();
+			const nestThreshold = taskItemRect.left + 40;
+
+			if (e.clientX >= nestThreshold) {
+				const potentialTarget = findNestTarget(e.clientY, taskItemEl, dropContainer);
+				if (potentialTarget) {
+					if (state.nestTargetEl !== potentialTarget) {
+						state.nestTargetEl?.removeClass("is-nest-target");
+						state.nestTargetEl = potentialTarget;
+						potentialTarget.addClass("is-nest-target");
+					}
+					if (!state.nestMode) {
+						state.nestMode = true;
+						state.cloneEl?.addClass("is-nest-mode");
+					}
+					state.indicatorEl.style.display = "none";
+					updateAutoScroll(dropContainer, e.clientY, state);
+					return;
+				}
+			}
+		}
+
+		// Exit nest mode if we were in it
+		if (state.nestMode) {
+			state.nestTargetEl?.removeClass("is-nest-target");
+			state.nestTargetEl = null;
+			state.nestMode = false;
+			state.cloneEl?.removeClass("is-nest-mode");
+			state.indicatorEl.style.display = "";
+		}
+
 		// Compute drop index and position indicator
 		state.dropIndex = getDropIndex(e.clientY, state.siblings);
 		positionIndicator(state.indicatorEl, state.siblings, state.dropIndex, containerRect);
@@ -114,12 +227,27 @@ export function attachDragHandle(
 	handleEl.addEventListener("pointerup", () => {
 		if (!state) return;
 		if (state.isDragging) {
+			const nestMode = state.nestMode;
+			const nestTargetEl = state.nestTargetEl;
+			const unnestMode = state.unnestMode;
+			const unnestDropIndex = state.unnestDropIndex;
 			const orderedIds = computeOrderedIds(taskItemEl, state.siblings, state.dropIndex);
 			cleanup(state, dropContainer);
 			state = null;
 			onDragStateChange?.(false);
-			// Only call onReorder when there's actually more than one item in the group
-			if (orderedIds.length > 1) {
+			if (unnestMode && onUnnest) {
+				const draggedId = taskItemEl.getAttribute("data-task-id");
+				if (draggedId) {
+					onUnnest(draggedId, unnestDropIndex);
+				}
+			} else if (nestMode && nestTargetEl && onNest) {
+				const draggedId = taskItemEl.getAttribute("data-task-id");
+				const targetId = nestTargetEl.getAttribute("data-task-id");
+				if (draggedId && targetId) {
+					onNest(draggedId, targetId);
+				}
+			} else if (orderedIds.length > 1) {
+				// Only call onReorder when there's actually more than one item in the group
 				onReorder(orderedIds);
 			}
 		} else {
@@ -129,6 +257,13 @@ export function attachDragHandle(
 	});
 
 	handleEl.addEventListener("pointercancel", () => {
+		if (!state) return;
+		cleanup(state, dropContainer);
+		state = null;
+		onDragStateChange?.(false);
+	});
+
+	handleEl.addEventListener("lostpointercapture", () => {
 		if (!state) return;
 		cleanup(state, dropContainer);
 		state = null;
@@ -210,8 +345,41 @@ function cleanup(state: DragState, dropContainer: HTMLElement): void {
 		document.removeEventListener("keydown", state.keydownHandler);
 		state.keydownHandler = null;
 	}
+	state.nestTargetEl?.removeClass("is-nest-target");
 	state.taskItemEl.removeClass("is-dragging");
 	state.cloneEl?.remove();
 	state.indicatorEl?.remove();
+	state.unnestIndicatorEl?.remove();
+	if (state.unnestContainer) {
+		state.unnestContainer.style.position = "";
+	}
 	state.taskItemEl.closest(".zen-todo-view")?.removeClass("is-reordering");
+	dropContainer.style.position = "";
+}
+
+function findNestTarget(
+	cursorY: number,
+	draggedEl: HTMLElement,
+	dropContainer: HTMLElement,
+): HTMLElement | null {
+	// Find the incomplete section to get root task items
+	const section = (
+		dropContainer.closest(".zen-todo-incomplete-section") ??
+		dropContainer
+	) as HTMLElement;
+
+	const rootItems = Array.from(
+		section.querySelectorAll(":scope > .zen-todo-task-item"),
+	) as HTMLElement[];
+
+	for (const item of rootItems) {
+		if (item === draggedEl) continue;
+		if (item.classList.contains("is-completed")) continue;
+
+		const rect = item.getBoundingClientRect();
+		if (cursorY >= rect.top && cursorY <= rect.bottom) {
+			return item;
+		}
+	}
+	return null;
 }

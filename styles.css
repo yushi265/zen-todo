@@ -729,6 +729,17 @@ body.is-mobile .zen-todo-drag-handle {
 	border-radius: var(--radius-s);
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 	overflow: hidden;
+	transition: left 0.15s ease;
+}
+
+.zen-todo-drag-clone.is-nest-mode {
+	left: 24px;
+}
+
+.zen-todo-drag-clone.is-unnest-mode {
+	left: -24px;
+	border-color: var(--color-orange);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 8px var(--color-orange);
 }
 
 .zen-todo-drop-indicator {
@@ -762,6 +773,15 @@ body.is-mobile .zen-todo-drag-handle {
 
 .zen-todo-view.is-reordering * {
 	cursor: grabbing !important;
+}
+
+/* Nest target highlight */
+.zen-todo-task-item.is-nest-target > .zen-todo-task-row {
+	background: hsla(var(--interactive-accent-hsl), 0.1);
+	border-radius: var(--radius-s);
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: -2px;
+	transition: background 0.15s ease, outline 0.15s ease;
 }
 
 /* --------------------------------------------------------------------------

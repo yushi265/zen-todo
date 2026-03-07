@@ -72,6 +72,27 @@ export function cloneTasks(tasks: TaskItem[]): TaskItem[] {
   return tasks.map(cloneTask);
 }
 
+export function findTaskInTree(tasks: TaskItem[], taskId: string): TaskItem | null {
+  for (const task of tasks) {
+    if (task.id === taskId) return task;
+    const found = findTaskInTree(task.subtasks, taskId);
+    if (found) return found;
+  }
+  return null;
+}
+
+export function removeTaskFromTree(tasks: TaskItem[], taskId: string): TaskItem | null {
+  for (let i = 0; i < tasks.length; i++) {
+    if (tasks[i].id === taskId) {
+      const [removed] = tasks.splice(i, 1);
+      return removed;
+    }
+    const removed = removeTaskFromTree(tasks[i].subtasks, taskId);
+    if (removed) return removed;
+  }
+  return null;
+}
+
 export function sortTasks(tasks: TaskItem[], sortKey: SortKey, direction: SortDirection = "asc"): TaskItem[] {
   if (sortKey === "manual") return tasks;
   const dir = direction === "desc" ? -1 : 1;

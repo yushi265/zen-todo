@@ -30,6 +30,8 @@ import {
   allSubtasksCompleted,
   cloneTasks,
   sortTasks,
+  findTaskInTree,
+  removeTaskFromTree,
 } from "../models/task";
 import { ALL_LISTS_PATH } from "../constants";
 
@@ -328,6 +330,13 @@ export class ZenTodoController {
         onDragStateChange: (dragging) => {
           this.isDragging = dragging;
         },
+        onNest: sortKey === "manual"
+          ? (draggedTaskId, targetTaskId) =>
+              this.reparentTask(activeList, draggedTaskId, targetTaskId)
+          : undefined,
+        onUnnest: sortKey === "manual"
+          ? (taskId, dropIndex) => this.unparentTask(activeList, taskId, dropIndex)
+          : undefined,
         app: this.app,
         sourcePath: activeList.filePath,
         moveTargets: this.getMoveTargets(activeList.filePath),
@@ -919,6 +928,59 @@ export class ZenTodoController {
     } else {
       list.tasks = newOrder;
     }
+    await this.saveList(list);
+  }
+
+  private async unparentTask(list: TodoList, taskId: string, dropIndex: number): Promise<void> {
+    const task = findTaskInTree(list.tasks, taskId);
+    if (!task) return;
+
+    this.captureUndo("unparent", t("undo.unparented", { name: task.text }), [list]);
+
+    removeTaskFromTree(list.tasks, taskId);
+    task.indentLevel = 0;
+    task.subtasks = [];
+
+    // Insert at dropIndex within the same-status group
+    const isCompleted = task.completed;
+    const incomplete = list.tasks.filter((t) => !t.completed);
+    const completed = list.tasks.filter((t) => t.completed);
+
+    if (isCompleted) {
+      const clampedIndex = Math.min(dropIndex, completed.length);
+      completed.splice(clampedIndex, 0, task);
+    } else {
+      const clampedIndex = Math.min(dropIndex, incomplete.length);
+      incomplete.splice(clampedIndex, 0, task);
+    }
+    list.tasks = [...incomplete, ...completed];
+
+    await this.saveList(list);
+  }
+
+  private async reparentTask(
+    list: TodoList,
+    taskId: string,
+    newParentTaskId: string,
+  ): Promise<void> {
+    const newParent = findTaskInTree(list.tasks, newParentTaskId);
+    if (!newParent) return;
+
+    const task = findTaskInTree(list.tasks, taskId);
+    if (!task) return;
+
+    // Safety check: if task itself has subtasks, nesting would exceed depth limit
+    if (task.subtasks.length > 0) return;
+
+    // Capture undo BEFORE mutating
+    this.captureUndo("reparent", t("undo.reparented", { name: task.text }), [list]);
+
+    // Remove the task from wherever it currently lives
+    removeTaskFromTree(list.tasks, taskId);
+
+    task.indentLevel = newParent.indentLevel + 1;
+    newParent.subtasks.push(task);
+
     await this.saveList(list);
   }
 

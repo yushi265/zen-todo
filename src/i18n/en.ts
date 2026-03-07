@@ -24,6 +24,8 @@ export const en: TranslationKeys = {
   "undo.deleted": 'Deleted "{{name}}"',
   "undo.archived": 'Archived "{{name}}"',
   "undo.archivedAll": "Archived {{count}} completed tasks",
+  "undo.reparented": 'Moved "{{name}}" to subtask',
+  "undo.unparented": 'Moved "{{name}}" to root',
   "undo.button": "Undo",
 
   // todo-controller.ts — empty state

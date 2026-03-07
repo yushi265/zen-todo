@@ -22,6 +22,8 @@ export interface TranslationKeys {
   "undo.deleted": string;
   "undo.archived": string;
   "undo.archivedAll": string;
+  "undo.reparented": string;
+  "undo.unparented": string;
   "undo.button": string;
 
   // todo-controller.ts — empty state

@@ -30,6 +30,8 @@ export interface RenderTaskOptions {
   onSubtaskCancel?: () => void;
   onReorder?: (orderedIds: string[], parentTask?: TaskItem) => void;
   onDragStateChange?: (dragging: boolean) => void;
+  onNest?: (draggedTaskId: string, targetTaskId: string) => void;
+  onUnnest?: (taskId: string, dropIndex: number) => void;
   app?: App;
   sourcePath?: string;
   moveTargets?: { filePath: string; title: string }[];
@@ -346,7 +348,7 @@ export function renderTaskItem(
     onAction({ action: "delete", task, parentTask });
   });
 
-  // Drag handle
+  // Drag handle (root tasks only for nest; subtasks can reorder within parent)
   if (options.onReorder) {
     attachDragHandle(
       itemEl,
@@ -355,6 +357,8 @@ export function renderTaskItem(
       task.id,
       (orderedIds) => options.onReorder!(orderedIds, parentTask),
       options.onDragStateChange,
+      !parentTask ? options.onNest : undefined,
+      parentTask ? options.onUnnest : undefined,
     );
   }
 

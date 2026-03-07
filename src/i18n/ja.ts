@@ -24,6 +24,8 @@ export const ja: TranslationKeys = {
   "undo.deleted": "「{{name}}」を削除しました",
   "undo.archived": "「{{name}}」をアーカイブしました",
   "undo.archivedAll": "{{count}}件の完了済みタスクをアーカイブしました",
+  "undo.reparented": "「{{name}}」をサブタスクに移動しました",
+  "undo.unparented": "「{{name}}」をメインタスクに戻しました",
   "undo.button": "元に戻す",
 
   // todo-controller.ts — empty state
