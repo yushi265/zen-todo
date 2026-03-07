@@ -3,6 +3,7 @@ import { setIcon } from "obsidian";
 interface DragState {
 	taskItemEl: HTMLElement;
 	startY: number;
+	startX: number;
 	handleOffsetY: number;
 	isDragging: boolean;
 	cloneEl: HTMLElement | null;
@@ -44,6 +45,7 @@ export function attachDragHandle(
 		state = {
 			taskItemEl,
 			startY: e.clientY,
+			startX: e.clientX,
 			handleOffsetY: e.clientY - rect.top,
 			isDragging: false,
 			cloneEl: null,
@@ -169,7 +171,8 @@ export function attachDragHandle(
 			}
 		}
 
-		// Exit unnest mode if we moved back right
+		// Exit unnest mode if we moved back right (hysteresis: must return to startX)
+		if (state.unnestMode && e.clientX < state.startX) return;
 		if (state.unnestMode) {
 			state.unnestMode = false;
 			state.cloneEl?.removeClass("is-unnest-mode");
