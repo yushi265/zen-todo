@@ -32,6 +32,7 @@ export interface RenderTaskOptions {
   onDragStateChange?: (dragging: boolean) => void;
   onNest?: (draggedTaskId: string, targetTaskId: string) => void;
   onUnnest?: (taskId: string, dropIndex: number) => void;
+  subtaskDragOnly?: boolean;  // trueならルートタスクのドラッグハンドルをスキップ
   app?: App;
   sourcePath?: string;
   moveTargets?: { filePath: string; title: string }[];
@@ -349,7 +350,7 @@ export function renderTaskItem(
   });
 
   // Drag handle (root tasks only for nest; subtasks can reorder within parent)
-  if (options.onReorder) {
+  if (options.onReorder && (!options.subtaskDragOnly || !!parentTask)) {
     attachDragHandle(
       itemEl,
       rowEl,

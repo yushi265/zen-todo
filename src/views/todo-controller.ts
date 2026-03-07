@@ -451,7 +451,13 @@ export class ZenTodoController {
             this.addingSubtaskFor = null;
             this.render();
           },
-          // onReorder intentionally omitted — cross-list handler manages drag
+          // サブタスクにのみドラッグハンドルを付与（ルートはcross-listハンドルを使う）
+          ...(sortKey === "manual" ? {
+            onReorder: (orderedIds: string[], parentTask?: TaskItem) => this.reorderTasks(list, orderedIds, parentTask),
+            onDragStateChange: (dragging: boolean) => { this.isDragging = dragging; },
+            onUnnest: (taskId: string, dropIndex: number) => this.unparentTask(list, taskId, dropIndex),
+          } : {}),
+          subtaskDragOnly: true,
           app: this.app,
           sourcePath: list.filePath,
           moveTargets: this.getMoveTargets(list.filePath),
