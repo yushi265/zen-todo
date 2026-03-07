@@ -134,6 +134,8 @@ export interface TranslationKeys {
   "settings.autoComplete.desc": string;
   "settings.defaultSort.name": string;
   "settings.defaultSort.desc": string;
+  "settings.openAllView.name": string;
+  "settings.openAllView.desc": string;
 
   // parser/markdown-parser.ts
   "parser.untitled": string;

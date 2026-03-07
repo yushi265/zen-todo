@@ -85,5 +85,17 @@ export class ZenTodoSettingTab extends PluginSettingTab {
 						this.plugin.refreshAllViews();
 					})
 			);
+
+		new Setting(containerEl)
+			.setName(t("settings.openAllView.name"))
+			.setDesc(t("settings.openAllView.desc"))
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.openAllViewByDefault)
+					.onChange(async (value) => {
+						this.plugin.settings.openAllViewByDefault = value;
+						await this.plugin.saveSettings();
+					})
+			);
 	}
 }

@@ -137,6 +137,8 @@ export const en: TranslationKeys = {
     "Automatically complete parent tasks when all subtasks are done.",
   "settings.defaultSort.name": "Default sort order",
   "settings.defaultSort.desc": "Sort order applied when opening a list. Can be overridden per-session using the sort selector in the panel.",
+  "settings.openAllView.name": "Open All view by default",
+  "settings.openAllView.desc": "Open the All view tab when activating ZenTodo from the ribbon or command.",
 
   // parser/markdown-parser.ts
   "parser.untitled": "Untitled",

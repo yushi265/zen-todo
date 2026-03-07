@@ -10,6 +10,7 @@ export const DEFAULT_SETTINGS: ZenTodoSettings = {
   excludedFromAll: [],
   language: "",
   defaultSortKey: "manual",
+  openAllViewByDefault: false,
 };
 
 export const ALL_LISTS_PATH = "__all__";

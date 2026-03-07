@@ -127,6 +127,10 @@ export default class ZenTodoPlugin extends Plugin {
     const leaf: WorkspaceLeaf = workspace.getLeaf("tab");
     await leaf.setViewState({ type: VIEW_TYPE_ZEN_TODO, active: true });
     workspace.revealLeaf(leaf);
+    if (this.settings.openAllViewByDefault) {
+      const view = this.getView();
+      if (view) view.showAllView();
+    }
   }
 
   /** Get the active view without storing a long-lived reference. */

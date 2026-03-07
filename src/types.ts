@@ -29,6 +29,7 @@ export interface ZenTodoSettings {
   excludedFromAll: string[];
   language: string; // "" = follow Obsidian, "en" | "ja" | ... = override
   defaultSortKey: SortKey;
+  openAllViewByDefault: boolean;
 }
 
 export type UndoActionType =

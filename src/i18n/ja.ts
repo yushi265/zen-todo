@@ -137,6 +137,8 @@ export const ja: TranslationKeys = {
     "すべてのサブタスクが完了したとき、親タスクを自動的に完了にします。",
   "settings.defaultSort.name": "デフォルトの並び順",
   "settings.defaultSort.desc": "リストを開いたときに適用される並び順。パネル内のソートセレクターでセッション中に変更できます。",
+  "settings.openAllView.name": "デフォルトで「すべて」ビューを開く",
+  "settings.openAllView.desc": "リボンやコマンドから ZenTodo を開いたとき、「すべて」タブで表示します。",
 
   // parser/markdown-parser.ts
   "parser.untitled": "無題",
