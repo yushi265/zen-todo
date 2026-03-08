@@ -4,6 +4,7 @@ import { isOverdue, isToday, formatRelativeDate } from "../utils/date-utils";
 import { CREATED_DATE_EMOJI } from "../constants";
 import { attachDragHandle } from "./drag-handler";
 import { t } from "../i18n";
+import { formatTaskTextWithTags, parseTaskInput } from "../models/task";
 
 export type TaskActionType =
   | "toggle"
@@ -68,8 +69,9 @@ export function renderTaskItem(
 
   // Content area (text + inline edit input)
   const contentArea = rowEl.createDiv({ cls: "zen-todo-task-content" });
+  const primaryLine = contentArea.createDiv({ cls: "zen-todo-task-primary-line" });
 
-  const textSpan = contentArea.createSpan({
+  const textSpan = primaryLine.createSpan({
     cls: "zen-todo-task-text",
     attr: {
       tabindex: "0",
@@ -88,6 +90,8 @@ export function renderTaskItem(
     textSpan.textContent = task.text;
   }
 
+  const tagsEl = task.tags.length > 0 ? renderTaskTags(primaryLine, task.tags) : null;
+
   // Edit input — hidden by default, toggled on click
   const editInput = contentArea.createEl("input", {
     type: "text",
@@ -97,10 +101,13 @@ export function renderTaskItem(
   // リンク済みタスクは中身だけ表示する（[[...]] を剥がす）
   const linkedMatch = task.text.match(/^\[\[([^\]]+)\]\]$/);
   const wasLinked = !!linkedMatch;
-  editInput.value = wasLinked ? linkedMatch![1] : task.text;
+  editInput.value = wasLinked
+    ? formatTaskTextWithTags(linkedMatch![1], task.tags)
+    : formatTaskTextWithTags(task.text, task.tags);
 
   const startEditing = () => {
     textSpan.addClass("is-hidden");
+    tagsEl?.addClass("is-hidden");
     editInput.removeClass("is-hidden");
     editInput.focus();
     editInput.select();
@@ -117,21 +124,32 @@ export function renderTaskItem(
       return;
     }
     // リンク済みタスクは自動で [[...]] を再付与
-    if (wasLinked) newText = `[[${newText}]]`;
-    if (newText !== task.text) {
+    if (wasLinked) {
+      const parsed = parseTaskInput(newText);
+      if (!parsed.text) {
+        cancelEdit();
+        return;
+      }
+      newText = formatTaskTextWithTags(`[[${parsed.text}]]`, parsed.tags);
+    }
+    if (newText !== formatTaskTextWithTags(task.text, task.tags)) {
       onAction({ action: "edit", task, value: newText, parentTask });
     } else {
       // Restore text span
       editInput.addClass("is-hidden");
       textSpan.removeClass("is-hidden");
+      tagsEl?.removeClass("is-hidden");
       editSaved = false;
     }
   };
 
   const cancelEdit = () => {
-    editInput.value = wasLinked ? linkedMatch![1] : task.text;
+    editInput.value = wasLinked
+      ? formatTaskTextWithTags(linkedMatch![1], task.tags)
+      : formatTaskTextWithTags(task.text, task.tags);
     editInput.addClass("is-hidden");
     textSpan.removeClass("is-hidden");
+    tagsEl?.removeClass("is-hidden");
     editSaved = false;
   };
 
@@ -548,6 +566,17 @@ export function renderWikiLinkedText(
   if (lastIndex < text.length) {
     container.appendText(text.slice(lastIndex));
   }
+}
+
+function renderTaskTags(container: HTMLElement, tags: string[]): HTMLElement {
+  const tagsEl = container.createDiv({ cls: "zen-todo-task-tags" });
+  for (const tag of tags) {
+    tagsEl.createSpan({
+      cls: "zen-todo-task-tag",
+      text: `#${tag}`,
+    });
+  }
+  return tagsEl;
 }
 
 function addLongPressHandler(

@@ -32,6 +32,7 @@ import {
   sortTasks,
   findTaskInTree,
   removeTaskFromTree,
+  parseTaskInput,
 } from "../models/task";
 import { ALL_LISTS_PATH } from "../constants";
 
@@ -873,8 +874,9 @@ export class ZenTodoController {
     task: TaskItem,
     newText: string,
   ): Promise<void> {
+    const parsed = parseTaskInput(newText);
     const oldLink = task.text.match(/^\[\[([^\]]+)\]\]$/);
-    const newLink = newText.match(/^\[\[([^\]]+)\]\]$/);
+    const newLink = parsed.text.match(/^\[\[([^\]]+)\]\]$/);
 
     // リンク先が変わった場合、既存ファイルをリネーム
     if (oldLink && newLink && oldLink[1] !== newLink[1]) {
@@ -893,7 +895,8 @@ export class ZenTodoController {
       }
     }
 
-    task.text = newText;
+    task.text = parsed.text;
+    task.tags = parsed.tags;
     await this.saveList(list);
   }
 

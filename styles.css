@@ -380,8 +380,17 @@
 	min-width: 0;
 }
 
+.zen-todo-task-primary-line {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	min-width: 0;
+}
+
 .zen-todo-task-text {
 	display: block;
+	flex: 1;
+	min-width: 0;
 	line-height: 1.5;
 	font-size: var(--font-ui-small);
 	cursor: text;
@@ -408,6 +417,25 @@
 	color: var(--text-normal);
 	font-size: var(--font-ui-small);
 	font-family: var(--font-interface);
+}
+
+.zen-todo-task-tags {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin-top: 0;
+	flex-shrink: 0;
+}
+
+.zen-todo-task-tag {
+	display: inline-flex;
+	align-items: center;
+	padding: 1px var(--size-4-2);
+	border-radius: var(--radius-s);
+	background: var(--background-secondary);
+	color: var(--text-accent);
+	font-size: var(--font-smallest);
+	line-height: 1.4;
 }
 
 /* Due / done badges */
@@ -1022,11 +1050,25 @@ body.is-mobile .zen-todo-drag-handle {
 	background: var(--background-modifier-hover);
 }
 
+.zen-todo-query-task-content {
+	flex: 1;
+	min-width: 0;
+}
+
+.zen-todo-query-task-primary-line {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	min-width: 0;
+}
+
 .zen-todo-query-task-text {
 	flex: 1;
+	min-width: 0;
 	font-size: var(--font-ui-small);
 	font-family: var(--font-interface);
 	color: var(--text-normal);
+	word-break: break-word;
 }
 
 .zen-todo-query-task-text .internal-link {
@@ -1194,6 +1236,16 @@ body.is-mobile .zen-todo-view {
 
 body.is-mobile .zen-todo-task-row {
 	min-height: 44px;
+}
+
+body.is-mobile .zen-todo-task-primary-line,
+body.is-mobile .zen-todo-query-task-primary-line {
+	display: block;
+}
+
+body.is-mobile .zen-todo-task-tags {
+	display: flex;
+	margin-top: 4px;
 }
 
 body.is-mobile .zen-todo-checkbox {

@@ -11,7 +11,8 @@ export type FilterType =
   | { kind: "due"; dateFilter: DateFilter }
   | { kind: "overdue" }
   | { kind: "incomplete" }
-  | { kind: "list"; name: string };
+  | { kind: "list"; name: string }
+  | { kind: "tag"; name: string };
 
 export interface Query {
   filters: FilterType[];
@@ -70,6 +71,14 @@ function parseLine(line: string): FilterType | null | "error" {
   const listMatch = trimmed.match(/^list:\s*"?(.+?)"?\s*$/i);
   if (listMatch) return { kind: "list", name: listMatch[1].trim() };
 
+  // tag: work / tag: #work
+  const tagMatch = trimmed.match(/^tag:\s*(.+)\s*$/i);
+  if (tagMatch) {
+    const name = tagMatch[1].trim().replace(/^#/, "");
+    if (!name) return "error";
+    return { kind: "tag", name };
+  }
+
   return "error";
 }
 
@@ -124,8 +133,9 @@ export function describeQuery(query: Query): string {
           return t("query.filterIncomplete");
         case "list":
           return t("query.filterList", { name: f.name });
+        case "tag":
+          return t("query.filterTag", { name: f.name });
       }
     })
     .join(" · ");
 }
-

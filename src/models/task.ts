@@ -7,15 +7,18 @@ import {
 import { today } from "../utils/date-utils";
 
 let idCounter = 0;
+const TAG_SEGMENT_REGEX = /^[\p{L}\p{N}_-]+$/u;
 
 export function createTaskId(): string {
   return `task-${Date.now()}-${idCounter++}`;
 }
 
 export function createTask(text: string, dueDate?: string): TaskItem {
+  const parsed = parseTaskInput(text);
   return {
     id: createTaskId(),
-    text: cleanTaskText(text),
+    text: parsed.text,
+    tags: parsed.tags,
     completed: false,
     createdDate: today(),
     dueDate,
@@ -50,6 +53,100 @@ export function cleanTaskText(text: string): string {
     .trim();
 }
 
+export function parseTaskInput(text: string): Pick<TaskItem, "text" | "tags"> {
+  const { text: extractedText, tags } = extractTaskTextAndTags(cleanTaskText(text));
+  return {
+    text: extractedText,
+    tags,
+  };
+}
+
+export function formatTaskTextWithTags(text: string, tags: string[]): string {
+  const normalizedTags = normalizeTaskTags(tags);
+  if (normalizedTags.length === 0) return text.trim();
+  const tagText = normalizedTags.map((tag) => `#${tag}`).join(" ");
+  return text.trim() ? `${text.trim()} ${tagText}` : tagText;
+}
+
+export function normalizeTaskTags(tags: string[]): string[] {
+  const normalized: string[] = [];
+  for (const rawTag of tags) {
+    const tag = rawTag.trim().replace(/^#+/, "");
+    if (!isValidTaskTag(tag)) continue;
+    if (!normalized.includes(tag)) {
+      normalized.push(tag);
+    }
+  }
+  return normalized;
+}
+
+function extractTaskTextAndTags(input: string): { text: string; tags: string[] } {
+  const textParts: string[] = [];
+  const tags: string[] = [];
+  let index = 0;
+  let insideWikiLink = false;
+
+  while (index < input.length) {
+    if (!insideWikiLink && input.startsWith("[[", index)) {
+      insideWikiLink = true;
+      textParts.push("[[");
+      index += 2;
+      continue;
+    }
+
+    if (insideWikiLink && input.startsWith("]]", index)) {
+      insideWikiLink = false;
+      textParts.push("]]");
+      index += 2;
+      continue;
+    }
+
+    const current = input[index];
+    const previous = index > 0 ? input[index - 1] : "";
+    if (!insideWikiLink && current === "#" && (index === 0 || /\s/.test(previous))) {
+      const consumed = consumeTagToken(input, index);
+      if (consumed) {
+        tags.push(consumed.tag);
+        index = consumed.nextIndex;
+        continue;
+      }
+    }
+
+    textParts.push(current);
+    index += 1;
+  }
+
+  return {
+    text: textParts.join("").replace(/\s{2,}/g, " ").trim(),
+    tags: normalizeTaskTags(tags),
+  };
+}
+
+function consumeTagToken(
+  input: string,
+  startIndex: number,
+): { tag: string; nextIndex: number } | null {
+  let endIndex = startIndex + 1;
+  while (endIndex < input.length && !/\s/.test(input[endIndex])) {
+    endIndex += 1;
+  }
+
+  const token = input.slice(startIndex + 1, endIndex);
+  if (!isValidTaskTag(token)) {
+    return null;
+  }
+
+  return {
+    tag: token,
+    nextIndex: endIndex,
+  };
+}
+
+function isValidTaskTag(tag: string): boolean {
+  if (!tag || tag.startsWith("/") || tag.endsWith("/")) return false;
+  return tag.split("/").every((segment) => TAG_SEGMENT_REGEX.test(segment));
+}
+
 export function allSubtasksCompleted(task: TaskItem): boolean {
   if (task.subtasks.length === 0) return false;
   return task.subtasks.every((st) => st.completed);
@@ -59,6 +156,7 @@ export function cloneTask(task: TaskItem): TaskItem {
   return {
     id: task.id,
     text: task.text,
+    tags: [...task.tags],
     completed: task.completed,
     createdDate: task.createdDate,
     dueDate: task.dueDate,

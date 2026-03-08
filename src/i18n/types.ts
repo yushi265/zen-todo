@@ -108,6 +108,7 @@ export interface TranslationKeys {
   "query.filterOverdue": string;
   "query.filterIncomplete": string;
   "query.filterList": string;
+  "query.filterTag": string;
   "query.unknownFilter": string;
 
   // todo-controller.ts — All view filter

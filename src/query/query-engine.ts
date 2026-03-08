@@ -37,6 +37,10 @@ function taskMatchesFilter(task: TaskItem, filter: FilterType): boolean {
     case "list":
       // handled at list level — always true at task level
       return true;
+    case "tag":
+      return task.tags.some(
+        (tag) => tag.toLowerCase() === filter.name.toLowerCase(),
+      );
   }
 }
 

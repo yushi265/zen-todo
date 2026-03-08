@@ -4,6 +4,7 @@ import {
   DONE_DATE_EMOJI,
   CREATED_DATE_EMOJI,
 } from "../constants";
+import { formatTaskTextWithTags } from "../models/task";
 
 export function serializeToMarkdown(
   title: string,
@@ -41,7 +42,7 @@ function serializeTask(task: TaskItem, depth: number, lines: string[]): void {
   const indent = "\t".repeat(depth);
   const checkChar = task.completed ? "x" : " ";
 
-  let text = task.text;
+  let text = formatTaskTextWithTags(task.text, task.tags);
   if (task.createdDate) text += ` ${CREATED_DATE_EMOJI} ${task.createdDate}`;
   if (task.dueDate) text += ` ${DUE_DATE_EMOJI} ${task.dueDate}`;
   if (task.completed && task.doneDate)

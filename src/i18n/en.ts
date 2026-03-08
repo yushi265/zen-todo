@@ -110,6 +110,7 @@ export const en: TranslationKeys = {
   "query.filterOverdue": "Overdue",
   "query.filterIncomplete": "Incomplete",
   "query.filterList": "List: {{name}}",
+  "query.filterTag": "Tag: #{{name}}",
   "query.unknownFilter": 'Unknown filter: "{{filter}}"',
 
   // todo-controller.ts — All view filter

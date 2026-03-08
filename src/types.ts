@@ -1,6 +1,7 @@
 export interface TaskItem {
   id: string;
   text: string;
+  tags: string[];
   completed: boolean;
   createdDate?: string; // YYYY-MM-DD
   dueDate?: string; // YYYY-MM-DD

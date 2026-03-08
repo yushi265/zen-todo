@@ -4,7 +4,7 @@ import {
   DONE_DATE_EMOJI,
   CREATED_DATE_EMOJI,
 } from "../constants";
-import { createTaskId } from "../models/task";
+import { createTaskId, parseTaskInput } from "../models/task";
 import { t } from "../i18n";
 
 // Note: No lookbehind regex used (iOS < 16.4 incompatibility)
@@ -86,15 +86,17 @@ export function parseMarkdown(content: string): {
     const doneDate = doneDateMatch ? doneDateMatch[1] : undefined;
     const createdDate = createdDateMatch ? createdDateMatch[1] : undefined;
 
-    const text = rest
+    const cleanedText = rest
       .replace(cleanupDue, "")
       .replace(cleanupDone, "")
       .replace(cleanupCreated, "")
       .trim();
+    const { text, tags } = parseTaskInput(cleanedText);
 
     const task: TaskItem = {
       id: createTaskId(),
       text,
+      tags,
       completed,
       createdDate,
       dueDate,

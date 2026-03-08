@@ -99,11 +99,24 @@ function renderQueryTaskItem(
   });
 
   // Text
-  const textSpan = rowEl.createSpan({ cls: "zen-todo-query-task-text" });
+  const contentEl = rowEl.createDiv({ cls: "zen-todo-query-task-content" });
+  const primaryLine = contentEl.createDiv({ cls: "zen-todo-query-task-primary-line" });
+
+  const textSpan = primaryLine.createSpan({ cls: "zen-todo-query-task-text" });
   if (task.text.includes("[[")) {
     renderWikiLinkedText(textSpan, task.text, app, sourcePath);
   } else {
     textSpan.textContent = task.text;
+  }
+
+  if (task.tags.length > 0) {
+    const tagsEl = primaryLine.createDiv({ cls: "zen-todo-task-tags" });
+    for (const tag of task.tags) {
+      tagsEl.createSpan({
+        cls: "zen-todo-task-tag",
+        text: `#${tag}`,
+      });
+    }
   }
 
   // Due date badge
