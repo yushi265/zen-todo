@@ -6,13 +6,15 @@ export function renderTaskInput(
 	lists?: { filePath: string; title: string }[],
 	selectedFilePath?: string | null,
 	onListChange?: (filePath: string) => void,
+	renderTrailingAction?: (controls: HTMLElement) => void,
 ): void {
 	const row = container.createDiv({ cls: "zen-todo-input-row" });
+	const controls = container.createDiv({ cls: "zen-todo-input-controls" });
 
 	// List selector dropdown (All view only)
 	let listSelect: HTMLSelectElement | null = null;
 	if (lists && lists.length > 0) {
-		listSelect = row.createEl("select", {
+		listSelect = controls.createEl("select", {
 			cls: "zen-todo-list-select",
 			attr: { "aria-label": t("input.addToList") },
 		});
@@ -36,13 +38,13 @@ export function renderTaskInput(
 		attr: { placeholder: t("input.taskPlaceholder"), "aria-label": t("input.taskAriaLabel") },
 	});
 
-	const dateInput = row.createEl("input", {
+	const dateInput = controls.createEl("input", {
 		type: "date",
 		cls: "zen-todo-input-date",
 		attr: { "aria-label": t("input.dueDateLabel") },
 	});
 
-	const addBtn = row.createEl("button", {
+	const addBtn = controls.createEl("button", {
 		cls: "zen-todo-add-btn",
 		text: t("input.addButton"),
 		attr: { "aria-label": t("input.addButtonLabel") },
@@ -67,4 +69,6 @@ export function renderTaskInput(
 	});
 
 	addBtn.addEventListener("click", submit);
+
+	renderTrailingAction?.(controls);
 }

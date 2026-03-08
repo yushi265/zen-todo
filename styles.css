@@ -13,6 +13,15 @@
 	display: none !important;
 }
 
+.zen-todo-view-host {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	min-height: 0;
+	padding: 0 !important;
+	overflow: hidden !important;
+}
+
 /* --------------------------------------------------------------------------
    View shell
    -------------------------------------------------------------------------- */
@@ -21,6 +30,7 @@
 	display: flex;
 	flex-direction: column;
 	height: 100%;
+	min-height: 0;
 	overflow: hidden;
 	color: var(--text-normal);
 	font-family: var(--font-interface);
@@ -136,6 +146,18 @@
 	align-items: center;
 }
 
+.zen-todo-input-controls {
+	display: flex;
+	gap: var(--size-4-2);
+	align-items: center;
+	margin-top: var(--size-4-2);
+	min-width: 0;
+}
+
+.zen-todo-input-controls .zen-todo-filter-wrapper--inline {
+	display: none;
+}
+
 .zen-todo-text-input {
 	flex: 1;
 	min-height: 44px;
@@ -203,6 +225,10 @@
 	position: relative;
 	display: flex;
 	align-items: center;
+}
+
+.zen-todo-filter-wrapper--inline {
+	flex-shrink: 0;
 }
 
 .zen-todo-filter-btn {
@@ -315,6 +341,7 @@
 
 .zen-todo-content {
 	flex: 1;
+	min-height: 0;
 	overflow-y: auto;
 	padding: var(--size-4-3);
 }
@@ -1232,6 +1259,8 @@ body.is-mobile .zen-todo-drag-handle {
 
 body.is-mobile .zen-todo-view {
 	-webkit-tap-highlight-color: transparent;
+	height: var(--zen-todo-mobile-viewport-height, 100%);
+	max-height: var(--zen-todo-mobile-viewport-height, 100%);
 }
 
 body.is-mobile .zen-todo-task-row {
@@ -1258,13 +1287,29 @@ body.is-mobile .zen-todo-sort-direction-btn {
 	height: 36px;
 }
 
-body.is-mobile .zen-todo-input-row {
-	flex-wrap: wrap;
+body.is-mobile .zen-todo-text-input {
+	width: 100%;
 }
 
-body.is-mobile .zen-todo-text-input {
-	flex-basis: 100%;
-	order: -1;
+body.is-mobile .zen-todo-list-select {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+body.is-mobile .zen-todo-input-date {
+	flex: 0 1 128px;
+	min-width: 96px;
+}
+
+body.is-mobile .zen-todo-add-btn,
+body.is-mobile .zen-todo-filter-wrapper--inline {
+	flex: 0 0 auto;
+}
+
+body.is-mobile .zen-todo-filter-btn {
+	width: 36px;
+	height: 36px;
+	justify-content: center;
 }
 
 body.is-mobile .zen-todo-text-input,
@@ -1284,12 +1329,24 @@ body.is-mobile .zen-todo-content {
 	overscroll-behavior: contain;
 }
 
+body.is-mobile .zen-todo-toolbar--all-filter {
+	display: none;
+}
+
+body.is-mobile .zen-todo-input-controls .zen-todo-filter-wrapper--inline {
+	display: flex;
+}
+
+body.is-mobile .zen-todo-view-host.is-keyboard-overlay .zen-todo-content {
+	padding-bottom: calc(var(--size-4-3) + var(--zen-todo-keyboard-inset, 0px));
+}
+
 body.is-mobile .zen-todo-embedded {
-	max-height: 70vh;
+	max-height: 70dvh;
 }
 
 body.is-mobile .zen-todo-embedded .zen-todo-content {
-	max-height: 50vh;
+	max-height: 50dvh;
 }
 
 

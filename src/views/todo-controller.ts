@@ -370,7 +370,7 @@ export class ZenTodoController {
     );
 
     // Toolbar row: filter button
-    const toolbarEl = el.createDiv({ cls: "zen-todo-toolbar" });
+    const toolbarEl = el.createDiv({ cls: "zen-todo-toolbar zen-todo-toolbar--all-filter" });
     this.renderAllViewFilter(toolbarEl);
 
     // Task input with list selector (using visibleLists for default target)
@@ -387,6 +387,9 @@ export class ZenTodoController {
       inputLists.map((l) => ({ filePath: l.filePath, title: l.title })),
       this.allViewSelectedList,
       (fp) => { this.allViewSelectedList = fp; },
+      (controls) => {
+        this.renderAllViewFilter(controls, "zen-todo-filter-wrapper--inline");
+      },
     );
     if (this.shouldFocusTaskInput) {
       this.shouldFocusTaskInput = false;
@@ -521,8 +524,12 @@ export class ZenTodoController {
     }
   }
 
-  private renderAllViewFilter(el: HTMLElement): void {
-    const wrapper = el.createDiv({ cls: "zen-todo-filter-wrapper" });
+  private renderAllViewFilter(el: HTMLElement, extraWrapperClass?: string): void {
+    const wrapper = el.createDiv({
+      cls: extraWrapperClass
+        ? `zen-todo-filter-wrapper ${extraWrapperClass}`
+        : "zen-todo-filter-wrapper",
+    });
     const btn = wrapper.createEl("button", {
       cls: "zen-todo-filter-btn clickable-icon",
       attr: { "aria-label": t("allView.filterLists") },
