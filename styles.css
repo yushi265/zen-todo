@@ -940,6 +940,23 @@ body.is-mobile .zen-todo-drag-handle {
 	text-decoration-line: line-through;
 }
 
+.zen-todo-task-text .external-link {
+	color: var(--link-external-color, var(--color-accent));
+	text-decoration-line: var(--link-decoration);
+	cursor: var(--cursor-link);
+	word-break: break-all;
+}
+
+.zen-todo-task-text .external-link:hover {
+	color: var(--link-external-color-hover, var(--color-accent));
+	text-decoration-line: var(--link-decoration-hover);
+}
+
+.zen-todo-task-item.is-completed .zen-todo-task-text .external-link {
+	color: var(--text-muted);
+	text-decoration-line: line-through;
+}
+
 /* --------------------------------------------------------------------------
    "All" tab
    -------------------------------------------------------------------------- */
@@ -1106,6 +1123,24 @@ body.is-mobile .zen-todo-drag-handle {
 
 .zen-todo-query-task-text .internal-link:hover {
 	color: var(--link-color-hover);
+}
+
+.zen-todo-query-task-text .external-link {
+	color: var(--link-external-color, var(--color-accent));
+	text-decoration-line: var(--link-decoration);
+	cursor: var(--cursor-link);
+	word-break: break-all;
+}
+
+.zen-todo-query-task-text .external-link:hover {
+	color: var(--link-external-color-hover, var(--color-accent));
+	text-decoration-line: var(--link-decoration-hover);
+}
+
+.zen-todo-query-task-item.is-completed .zen-todo-query-task-text .internal-link,
+.zen-todo-query-task-item.is-completed .zen-todo-query-task-text .external-link {
+	color: var(--text-muted);
+	text-decoration-line: line-through;
 }
 
 .zen-todo-query-empty {

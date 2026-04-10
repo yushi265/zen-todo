@@ -5,6 +5,12 @@ import { CREATED_DATE_EMOJI } from "../constants";
 import { attachDragHandle } from "./drag-handler";
 import { t } from "../i18n";
 import { formatTaskTextWithTags, parseTaskInput } from "../models/task";
+import {
+  attachSmartUrlPaste,
+  parseBareUrlAt,
+  parseMarkdownExternalLinkAt,
+  parseWikiLinkAt,
+} from "../utils/link-utils";
 
 export type TaskActionType =
   | "toggle"
@@ -79,16 +85,7 @@ export function renderTaskItem(
       "aria-label": t("task.editLabel"),
     },
   });
-  if (task.text.includes("[[") && options.app) {
-    renderWikiLinkedText(
-      textSpan,
-      task.text,
-      options.app,
-      options.sourcePath ?? "",
-    );
-  } else {
-    textSpan.textContent = task.text;
-  }
+  renderTaskText(textSpan, task.text, options.app, options.sourcePath ?? "");
 
   const tagsEl = task.tags.length > 0 ? renderTaskTags(primaryLine, task.tags) : null;
 
@@ -98,6 +95,7 @@ export function renderTaskItem(
     cls: "zen-todo-task-edit-input is-hidden",
     attr: { "aria-label": t("task.editInputLabel") },
   });
+  attachSmartUrlPaste(editInput);
   // リンク済みタスクは中身だけ表示する（[[...]] を剥がす）
   const linkedMatch = task.text.match(/^\[\[([^\]]+)\]\]$/);
   const wasLinked = !!linkedMatch;
@@ -516,56 +514,74 @@ export function renderTaskItem(
   }
 }
 
+export function renderTaskText(
+  container: HTMLElement,
+  text: string,
+  app?: App,
+  sourcePath?: string,
+): void {
+  let lastPlainIndex = 0;
+  let index = 0;
+
+  while (index < text.length) {
+    const markdownLink = parseMarkdownExternalLinkAt(text, index);
+    if (markdownLink) {
+      if (index > lastPlainIndex) {
+        container.appendText(text.slice(lastPlainIndex, index));
+      }
+      renderExternalLink(container, markdownLink.label, markdownLink.url);
+      index = markdownLink.endIndex;
+      lastPlainIndex = index;
+      continue;
+    }
+
+    const wikiLink = parseWikiLinkAt(text, index);
+    if (wikiLink) {
+      if (index > lastPlainIndex) {
+        container.appendText(text.slice(lastPlainIndex, index));
+      }
+      renderInternalLink(
+        container,
+        wikiLink.displayText,
+        wikiLink.linkTarget,
+        app,
+        sourcePath,
+      );
+      index = wikiLink.endIndex;
+      lastPlainIndex = index;
+      continue;
+    }
+
+    const bareUrl = parseBareUrlAt(text, index);
+    if (bareUrl) {
+      if (index > lastPlainIndex) {
+        container.appendText(text.slice(lastPlainIndex, index));
+      }
+      renderExternalLink(container, bareUrl.url, bareUrl.url);
+      if (bareUrl.trailingText) {
+        container.appendText(bareUrl.trailingText);
+      }
+      index = bareUrl.endIndex;
+      lastPlainIndex = index;
+      continue;
+    }
+
+    index += 1;
+  }
+
+  if (lastPlainIndex < text.length) {
+    container.appendText(text.slice(lastPlainIndex));
+  }
+}
+
+/** @deprecated Use renderTaskText instead */
 export function renderWikiLinkedText(
   container: HTMLElement,
   text: string,
   app: App,
   sourcePath: string,
 ): void {
-  const wikiLinkRegex = /\[\[([^\]]+?)\]\]/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = wikiLinkRegex.exec(text)) !== null) {
-    // Plain text before this link
-    if (match.index > lastIndex) {
-      container.appendText(text.slice(lastIndex, match.index));
-    }
-
-    const inner = match[1];
-    // Support [[target#heading|display]] or [[target|display]] or [[target#heading]] or [[target]]
-    const pipeIdx = inner.indexOf("|");
-    const linkTarget = pipeIdx !== -1 ? inner.slice(0, pipeIdx) : inner;
-    const displayText = pipeIdx !== -1 ? inner.slice(pipeIdx + 1) : inner;
-
-    const linkEl = container.createEl("a", {
-      cls: "internal-link",
-      text: displayText,
-      attr: { href: linkTarget },
-    });
-
-    // Check if the target file exists
-    const targetFile = app.metadataCache.getFirstLinkpathDest(
-      linkTarget.split("#")[0],
-      sourcePath,
-    );
-    if (!targetFile) {
-      linkEl.addClass("is-unresolved");
-    }
-
-    linkEl.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      app.workspace.openLinkText(linkTarget, sourcePath);
-    });
-
-    lastIndex = match.index + match[0].length;
-  }
-
-  // Remaining plain text
-  if (lastIndex < text.length) {
-    container.appendText(text.slice(lastIndex));
-  }
+  renderTaskText(container, text, app, sourcePath);
 }
 
 function renderTaskTags(container: HTMLElement, tags: string[]): HTMLElement {
@@ -651,6 +667,7 @@ function renderSubtaskInput(
       "aria-label": t("subtask.ariaLabel"),
     },
   });
+  attachSmartUrlPaste(input);
 
   const submit = () => {
     const text = input.value.trim();
@@ -677,4 +694,48 @@ function renderSubtaskInput(
 
   // Defer focus so the render cycle completes first
   setTimeout(() => input.focus(), 0);
+}
+
+function renderInternalLink(
+  container: HTMLElement,
+  displayText: string,
+  linkTarget: string,
+  app?: App,
+  sourcePath?: string,
+): void {
+  const linkEl = container.createEl("a", {
+    cls: "internal-link",
+    text: displayText,
+    attr: { href: linkTarget },
+  });
+
+  if (app && sourcePath !== undefined) {
+    const targetFile = app.metadataCache.getFirstLinkpathDest(
+      linkTarget.split("#")[0],
+      sourcePath,
+    );
+    if (!targetFile) {
+      linkEl.addClass("is-unresolved");
+    }
+    linkEl.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      app.workspace.openLinkText(linkTarget, sourcePath);
+    });
+  } else {
+    linkEl.addEventListener("click", (e) => e.stopPropagation());
+  }
+}
+
+function renderExternalLink(
+  container: HTMLElement,
+  displayText: string,
+  url: string,
+): void {
+  const linkEl = container.createEl("a", {
+    cls: "external-link",
+    text: displayText,
+    attr: { href: url, target: "_blank", rel: "noopener" },
+  });
+  linkEl.addEventListener("click", (e) => e.stopPropagation());
 }

@@ -1,4 +1,5 @@
 import { t } from "../i18n";
+import { attachSmartUrlPaste } from "../utils/link-utils";
 
 export function renderTaskInput(
 	container: HTMLElement,
@@ -37,6 +38,7 @@ export function renderTaskInput(
 		cls: "zen-todo-text-input",
 		attr: { placeholder: t("input.taskPlaceholder"), "aria-label": t("input.taskAriaLabel") },
 	});
+	attachSmartUrlPaste(textInput);
 
 	const dateInput = controls.createEl("input", {
 		type: "date",

@@ -3,7 +3,7 @@ import type { TaskItem } from "../types";
 import type { QueryResultItem } from "../query/query-engine";
 import type { Query } from "../query/query-parser";
 import { describeQuery } from "../query/query-parser";
-import { renderWikiLinkedText } from "./task-item-renderer";
+import { renderTaskText } from "./task-item-renderer";
 import { isOverdue, isToday } from "../utils/date-utils";
 import { t } from "../i18n";
 
@@ -101,11 +101,7 @@ function renderQueryTaskItem(
   const primaryLine = contentEl.createDiv({ cls: "zen-todo-query-task-primary-line" });
 
   const textSpan = primaryLine.createSpan({ cls: "zen-todo-query-task-text" });
-  if (task.text.includes("[[")) {
-    renderWikiLinkedText(textSpan, task.text, app, sourcePath);
-  } else {
-    textSpan.textContent = task.text;
-  }
+  renderTaskText(textSpan, task.text, app, sourcePath);
 
   if (task.tags.length > 0) {
     const tagsEl = primaryLine.createDiv({ cls: "zen-todo-task-tags" });

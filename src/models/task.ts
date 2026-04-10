@@ -5,6 +5,7 @@ import {
   CREATED_DATE_EMOJI,
 } from "../constants";
 import { today } from "../utils/date-utils";
+import { parseMarkdownExternalLinkAt } from "../utils/link-utils";
 
 let idCounter = 0;
 const TAG_SEGMENT_REGEX = /^[\p{L}\p{N}_-]+$/u;
@@ -87,6 +88,15 @@ function extractTaskTextAndTags(input: string): { text: string; tags: string[] }
   let insideWikiLink = false;
 
   while (index < input.length) {
+    if (!insideWikiLink) {
+      const markdownLink = parseMarkdownExternalLinkAt(input, index);
+      if (markdownLink) {
+        textParts.push(markdownLink.raw);
+        index = markdownLink.endIndex;
+        continue;
+      }
+    }
+
     if (!insideWikiLink && input.startsWith("[[", index)) {
       insideWikiLink = true;
       textParts.push("[[");
