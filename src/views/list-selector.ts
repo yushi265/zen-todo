@@ -1,4 +1,4 @@
-import { setIcon, Platform } from "obsidian";
+import { setIcon, Platform, Menu } from "obsidian";
 import { attachTabDrag } from "./tab-drag-handler";
 import { ALL_LISTS_PATH } from "../constants";
 import { t } from "../i18n";
@@ -17,6 +17,7 @@ export function renderListSelector(
   onCreateNew?: () => void,
   onReorder?: (orderedFilePaths: string[]) => void,
   onRename?: (filePath: string, newName: string) => void,
+  onHide?: (filePath: string) => void,
 ): void {
   container.empty();
 
@@ -53,6 +54,27 @@ export function renderListSelector(
 
     let suppressNextClick = false;
 
+    const showTabMenu = (x: number, y: number) => {
+      const menu = new Menu();
+      if (onRename) {
+        menu.addItem((item) =>
+          item
+            .setTitle(t("menu.rename"))
+            .setIcon("pencil")
+            .onClick(() => startTabRename(tab, tabsEl, list.filePath, list.title, onRename!)),
+        );
+      }
+      if (onHide) {
+        menu.addItem((item) =>
+          item
+            .setTitle(t("menu.hideList"))
+            .setIcon("eye-off")
+            .onClick(() => onHide(list.filePath)),
+        );
+      }
+      menu.showAtPosition({ x, y });
+    };
+
     tab.addEventListener("click", () => {
       if (suppressNextClick) {
         suppressNextClick = false;
@@ -72,7 +94,15 @@ export function renderListSelector(
       onSelect(list.filePath);
     });
 
-    if (onRename && Platform.isMobile) {
+    if (!Platform.isMobile) {
+      tab.addEventListener("contextmenu", (e: MouseEvent) => {
+        if (!onRename && !onHide) return;
+        e.preventDefault();
+        showTabMenu(e.clientX, e.clientY);
+      });
+    }
+
+    if (Platform.isMobile && (onRename || onHide)) {
       let longPressTimer: ReturnType<typeof setTimeout> | null = null;
       let pointerStartX = 0;
       let pointerStartY = 0;
@@ -84,7 +114,7 @@ export function renderListSelector(
         longPressTimer = setTimeout(() => {
           longPressTimer = null;
           suppressNextClick = true;
-          startTabRename(tab, tabsEl, list.filePath, list.title, onRename!);
+          showTabMenu(pointerStartX, pointerStartY);
         }, 500);
       });
 

@@ -128,16 +128,20 @@ export class ZenTodoController {
       .getFiles()
       .filter((f) => f.path.startsWith(folder + "/") && f.extension === "md");
 
-    this.lists = await Promise.all(
-      files.map(async (file) => {
-        const content = await this.app.vault.read(file);
-        const { title, description, tasks, archivedSection } = parseMarkdown(content);
-        return { filePath: file.path, title, description, tasks, archivedSection };
-      }),
-    );
+    const hidden = new Set(this.settings.hiddenLists);
+    this.lists = (
+      await Promise.all(
+        files.map(async (file) => {
+          const content = await this.app.vault.read(file);
+          const { title, description, tasks, archivedSection } = parseMarkdown(content);
+          return { filePath: file.path, title, description, tasks, archivedSection };
+        }),
+      )
+    ).filter((l) => !hidden.has(l.filePath));
 
     this.sortListsByOrder();
     await this.reconcileListOrder();
+    await this.reconcileHiddenLists();
 
     if (this.lists.length > 0) {
       if (this.activeFilePath === ALL_LISTS_PATH) {
@@ -170,6 +174,23 @@ export class ZenTodoController {
     const cleaned = this.settings.listOrder.filter((p) => validPaths.has(p));
     if (cleaned.length !== this.settings.listOrder.length) {
       this.settings.listOrder = cleaned;
+      await this._saveSettings();
+    }
+  }
+
+  private async reconcileHiddenLists(): Promise<void> {
+    const allFiles = new Set(
+      this.app.vault
+        .getFiles()
+        .filter((f) => {
+          const folder = normalizePath(this.settings.todoFolder);
+          return f.path.startsWith(folder + "/") && f.extension === "md";
+        })
+        .map((f) => f.path),
+    );
+    const cleaned = this.settings.hiddenLists.filter((p) => allFiles.has(p));
+    if (cleaned.length !== this.settings.hiddenLists.length) {
+      this.settings.hiddenLists = cleaned;
       await this._saveSettings();
     }
   }
@@ -227,6 +248,23 @@ export class ZenTodoController {
     this.render();
   }
 
+  async hideList(filePath: string): Promise<void> {
+    if (!this.settings.hiddenLists.includes(filePath)) {
+      this.settings.hiddenLists = [...this.settings.hiddenLists, filePath];
+      await this._saveSettings();
+    }
+    if (this.activeFilePath === filePath) this.activeFilePath = null;
+    await this.loadLists();
+    this.render();
+  }
+
+  async unhideList(filePath: string): Promise<void> {
+    this.settings.hiddenLists = this.settings.hiddenLists.filter((p) => p !== filePath);
+    await this._saveSettings();
+    await this.loadLists();
+    this.render();
+  }
+
   private getCurrentSortKey(): SortKey {
     return this.activeSortKey ?? this.settings.defaultSortKey;
   }
@@ -266,6 +304,21 @@ export class ZenTodoController {
       this.onCreateNew,
       (orderedFilePaths) => this.reorderLists(orderedFilePaths),
       (filePath, newName) => this.renameList(filePath, newName),
+      async (filePath) => {
+        const list = this.lists.find((l) => l.filePath === filePath);
+        if (!list) return;
+        const confirmed = await new Promise<boolean>((resolve) => {
+          new ConfirmModal(
+            this.app,
+            t("modal.hideList.title"),
+            t("modal.hideList.message", { name: list.title }),
+            t("modal.hideList.confirm"),
+            t("modal.hideList.cancel"),
+            resolve,
+          ).open();
+        });
+        if (confirmed) await this.hideList(filePath);
+      },
     );
 
     // All view
@@ -769,6 +822,8 @@ export class ZenTodoController {
         this.app,
         t("modal.removeLink.title"),
         t("modal.removeLink.message", { name: linkTarget }),
+        t("modal.removeLink.confirm"),
+        t("modal.removeLink.cancel"),
         resolve,
       );
       modal.open();
@@ -1270,13 +1325,24 @@ class NewListModal extends Modal {
 class ConfirmModal extends Modal {
   private title: string;
   private message: string;
+  private confirmLabel: string;
+  private cancelLabel: string;
   private resolve: (value: boolean) => void;
   private resolved = false;
 
-  constructor(app: App, title: string, message: string, resolve: (value: boolean) => void) {
+  constructor(
+    app: App,
+    title: string,
+    message: string,
+    confirmLabel: string,
+    cancelLabel: string,
+    resolve: (value: boolean) => void,
+  ) {
     super(app);
     this.title = title;
     this.message = message;
+    this.confirmLabel = confirmLabel;
+    this.cancelLabel = cancelLabel;
     this.resolve = resolve;
   }
 
@@ -1286,13 +1352,13 @@ class ConfirmModal extends Modal {
     contentEl.createEl("p", { text: this.message });
 
     const btnContainer = contentEl.createDiv({ cls: "modal-button-container" });
-    btnContainer.createEl("button", { text: t("modal.removeLink.cancel") }).addEventListener("click", () => {
+    btnContainer.createEl("button", { text: this.cancelLabel }).addEventListener("click", () => {
       this.resolved = true;
       this.resolve(false);
       this.close();
     });
-    const removeBtn = btnContainer.createEl("button", { cls: "mod-warning", text: t("modal.removeLink.confirm") });
-    removeBtn.addEventListener("click", () => {
+    const confirmBtn = btnContainer.createEl("button", { cls: "mod-warning", text: this.confirmLabel });
+    confirmBtn.addEventListener("click", () => {
       this.resolved = true;
       this.resolve(true);
       this.close();

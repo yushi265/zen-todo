@@ -42,6 +42,12 @@ export interface TranslationKeys {
   "modal.removeLink.cancel": string;
   "modal.removeLink.confirm": string;
 
+  // todo-controller.ts — hide list modal
+  "modal.hideList.title": string;
+  "modal.hideList.message": string;
+  "modal.hideList.confirm": string;
+  "modal.hideList.cancel": string;
+
   // task-item-renderer.ts — aria labels
   "task.markComplete": string;
   "task.markIncomplete": string;
@@ -65,6 +71,10 @@ export interface TranslationKeys {
   "menu.moveTo": string;
   "menu.archive": string;
   "menu.delete": string;
+
+  // list-selector.ts — tab context menu
+  "menu.rename": string;
+  "menu.hideList": string;
 
   // task-item-renderer.ts — subtask input
   "subtask.placeholder": string;
@@ -139,6 +149,12 @@ export interface TranslationKeys {
   "settings.defaultSort.desc": string;
   "settings.openAllView.name": string;
   "settings.openAllView.desc": string;
+
+  // settings.ts — hidden lists
+  "settings.hiddenLists.name": string;
+  "settings.hiddenLists.desc": string;
+  "settings.hiddenLists.unhide": string;
+  "settings.hiddenLists.empty": string;
 
   // parser/markdown-parser.ts
   "parser.untitled": string;

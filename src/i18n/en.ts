@@ -44,6 +44,12 @@ export const en: TranslationKeys = {
   "modal.removeLink.cancel": "Cancel",
   "modal.removeLink.confirm": "Remove",
 
+  // hide list modal
+  "modal.hideList.title": "Hide list",
+  "modal.hideList.message": 'Hide "{{name}}" from the sidebar? The file will remain in your vault.',
+  "modal.hideList.confirm": "Hide",
+  "modal.hideList.cancel": "Cancel",
+
   // task-item-renderer.ts — aria labels
   "task.markComplete": "Mark as complete",
   "task.markIncomplete": "Mark as incomplete",
@@ -67,6 +73,10 @@ export const en: TranslationKeys = {
   "menu.moveTo": "Move to...",
   "menu.archive": "Archive",
   "menu.delete": "Delete",
+
+  // list-selector.ts — tab context menu
+  "menu.rename": "Rename",
+  "menu.hideList": "Hide list",
 
   // subtask input
   "subtask.placeholder": "Add a subtask...",
@@ -142,6 +152,12 @@ export const en: TranslationKeys = {
   "settings.defaultSort.desc": "Sort order applied when opening a list. Can be overridden per-session using the sort selector in the panel.",
   "settings.openAllView.name": "Open All view by default",
   "settings.openAllView.desc": "Open the All view tab when activating ZenTodo from the ribbon or command.",
+
+  // settings.ts — hidden lists
+  "settings.hiddenLists.name": "Hidden lists",
+  "settings.hiddenLists.desc": "Lists hidden from the sidebar. The underlying files are untouched.",
+  "settings.hiddenLists.unhide": "Show",
+  "settings.hiddenLists.empty": "No hidden lists.",
 
   // parser/markdown-parser.ts
   "parser.untitled": "Untitled",

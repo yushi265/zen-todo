@@ -44,6 +44,12 @@ export const ja: TranslationKeys = {
   "modal.removeLink.cancel": "キャンセル",
   "modal.removeLink.confirm": "削除",
 
+  // hide list modal
+  "modal.hideList.title": "リストを非表示にする",
+  "modal.hideList.message": "「{{name}}」をサイドバーから非表示にしますか？ファイルは vault に残ります。",
+  "modal.hideList.confirm": "非表示にする",
+  "modal.hideList.cancel": "キャンセル",
+
   // task-item-renderer.ts — aria labels
   "task.markComplete": "完了にする",
   "task.markIncomplete": "未完了に戻す",
@@ -67,6 +73,10 @@ export const ja: TranslationKeys = {
   "menu.moveTo": "移動先...",
   "menu.archive": "アーカイブ",
   "menu.delete": "削除",
+
+  // list-selector.ts — tab context menu
+  "menu.rename": "名前を変更",
+  "menu.hideList": "リストを非表示",
 
   // subtask input
   "subtask.placeholder": "サブタスクを追加...",
@@ -142,6 +152,12 @@ export const ja: TranslationKeys = {
   "settings.defaultSort.desc": "リストを開いたときに適用される並び順。パネル内のソートセレクターでセッション中に変更できます。",
   "settings.openAllView.name": "デフォルトで「すべて」ビューを開く",
   "settings.openAllView.desc": "リボンやコマンドから ZenTodo を開いたとき、「すべて」タブで表示します。",
+
+  // settings.ts — hidden lists
+  "settings.hiddenLists.name": "非表示のリスト",
+  "settings.hiddenLists.desc": "サイドバーから非表示にされているリスト。ファイル本体は残っています。",
+  "settings.hiddenLists.unhide": "表示に戻す",
+  "settings.hiddenLists.empty": "非表示のリストはありません。",
 
   // parser/markdown-parser.ts
   "parser.untitled": "無題",

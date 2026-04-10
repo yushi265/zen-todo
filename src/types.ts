@@ -28,6 +28,7 @@ export interface ZenTodoSettings {
   autoCompleteParent: boolean;
   listOrder: string[];
   excludedFromAll: string[];
+  hiddenLists: string[];
   language: string; // "" = follow Obsidian, "en" | "ja" | ... = override
   defaultSortKey: SortKey;
   openAllViewByDefault: boolean;

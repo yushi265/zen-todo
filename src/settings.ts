@@ -97,5 +97,38 @@ export class ZenTodoSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+
+		// Hidden lists section
+		new Setting(containerEl)
+			.setName(t("settings.hiddenLists.name"))
+			.setDesc(t("settings.hiddenLists.desc"))
+			.setHeading();
+
+		const hiddenLists = this.plugin.settings.hiddenLists;
+		if (hiddenLists.length === 0) {
+			containerEl.createEl("p", {
+				text: t("settings.hiddenLists.empty"),
+				cls: "setting-item-description",
+			});
+		} else {
+			for (const filePath of hiddenLists) {
+				const fileName = filePath.split("/").pop()?.replace(/\.md$/, "") ?? filePath;
+				new Setting(containerEl)
+					.setName(fileName)
+					.setDesc(filePath)
+					.addButton((btn) =>
+						btn
+							.setButtonText(t("settings.hiddenLists.unhide"))
+							.onClick(async () => {
+								this.plugin.settings.hiddenLists = this.plugin.settings.hiddenLists.filter(
+									(p) => p !== filePath,
+								);
+								await this.plugin.saveSettings();
+								this.plugin.refreshAllViews();
+								this.display();
+							}),
+					);
+			}
+		}
 	}
 }
