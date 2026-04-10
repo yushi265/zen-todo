@@ -44,24 +44,13 @@ function taskMatchesFilter(task: TaskItem, filter: FilterType): boolean {
   }
 }
 
-function taskOrSubtaskMatchesFilter(task: TaskItem, filter: FilterType): boolean {
-  if (taskMatchesFilter(task, filter)) return true;
-  return task.subtasks.some((st) => taskOrSubtaskMatchesFilter(st, filter));
-}
-
-function taskMatchesAllFilters(
-  task: TaskItem,
-  listTitle: string,
-  filters: FilterType[],
-): boolean {
-  for (const filter of filters) {
-    if (filter.kind === "list") {
-      if (!listTitle.toLowerCase().includes(filter.name.toLowerCase())) return false;
-    } else {
-      if (!taskOrSubtaskMatchesFilter(task, filter)) return false;
-    }
+function flattenTasks(tasks: TaskItem[]): TaskItem[] {
+  const out: TaskItem[] = [];
+  for (const task of tasks) {
+    out.push(task);
+    if (task.subtasks.length > 0) out.push(...flattenTasks(task.subtasks));
   }
-  return true;
+  return out;
 }
 
 export function executeQuery(query: Query, lists: TodoList[]): QueryResultItem[] {
@@ -81,10 +70,8 @@ export function executeQuery(query: Query, lists: TodoList[]): QueryResultItem[]
       if (!matchesList) continue;
     }
 
-    for (const task of list.tasks) {
-      // Use taskFilters for task-level matching (list filters already applied above)
-      const fakeQuery = { filters: taskFilters };
-      if (taskMatchesAllFilters(task, list.title, fakeQuery.filters)) {
+    for (const task of flattenTasks(list.tasks)) {
+      if (taskFilters.every((f) => taskMatchesFilter(task, f))) {
         results.push({
           task,
           listTitle: list.title,

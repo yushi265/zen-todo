@@ -76,11 +76,9 @@ function renderQueryTaskItem(
   app: App,
   sourcePath: string,
   onToggle: (task: TaskItem, listFilePath: string) => void,
-  indent = 0,
 ): void {
   const itemEl = container.createDiv({
     cls: `zen-todo-query-task-item${task.completed ? " is-completed" : ""}`,
-    attr: indent > 0 ? { style: `padding-left: ${indent * 20}px` } : {},
   });
 
   const rowEl = itemEl.createDiv({ cls: "zen-todo-query-task-row" });
@@ -141,16 +139,4 @@ function renderQueryTaskItem(
     });
   }
 
-  // Subtasks (recursive)
-  for (const subtask of task.subtasks) {
-    renderQueryTaskItem(
-      container,
-      subtask,
-      listFilePath,
-      app,
-      sourcePath,
-      onToggle,
-      indent + 1,
-    );
-  }
 }
